@@ -38,8 +38,8 @@ O projeto será desenvolvido utilizando:
 
 ## Equipe
 
-Bernardo
-Gustavo
+Bernardo Friske de Souza
+Gustavo Guardia dos Santos Prado
 Marco Antônio Pereira Alves Fonseca
 
 ## Licença
