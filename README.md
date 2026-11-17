@@ -36,6 +36,12 @@ O projeto será desenvolvido utilizando:
 
 🚧 **Em desenvolvimento**
 
+## Planejamento
+
+O [backlog inicial](docs/BACKLOG.md) organiza os primeiros incrementos, os critérios de aceite e uma proposta de modelagem de dados e estrutura do código. Ele será refinado conforme as entregas e o feedback da equipe.
+
+O [fluxo do usuário](docs/USER-FLOW.md) descreve a navegação e as interações. As [regras de negócio](docs/BUSINESS-RULES.md) centralizam validações, cálculos e regras do domínio. Ambos serão atualizados durante o desenvolvimento.
+
 ## Equipe
 
 Bernardo Friske de Souza
