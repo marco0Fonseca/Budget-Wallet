@@ -1,0 +1,45 @@
+# Dependências instaladas localmente
+node_modules/
+
+# Builds, cache e relatórios gerados
+dist/
+build/
+coverage/
+.nyc_output/
+.cache/
+.vite/
+.vercel/
+*.tsbuildinfo
+
+# Variáveis locais e segredos; exemplos sem credenciais são versionados
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Bancos SQLite locais e arquivos auxiliares
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Metadados locais do sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Versionar package.json, package-lock.json, schema Prisma e migrations.

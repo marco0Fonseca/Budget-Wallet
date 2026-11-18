@@ -1,6 +1,6 @@
 # Backlog inicial — BudgetWallet
 
-Este backlog é uma proposta evolutiva. O repositório contém o README e as pastas `frontend`, `src` e `prisma`, ainda sem implementação versionada. Vamos detalhar apenas o necessário para entregar e validar o primeiro fluxo; as próximas funcionalidades serão refinadas conforme aprendermos com o uso.
+Este backlog é evolutivo. A configuração local de TypeScript, Prisma e testes está disponível; o próximo passo é desenvolver as primeiras classes e sua persistência, antes de integrar a aplicação web. Vamos detalhar apenas o necessário para entregar e validar o primeiro fluxo; as próximas funcionalidades serão refinadas conforme aprendermos com o uso.
 
 ## Objetivo da primeira entrega
 
@@ -29,20 +29,22 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01 está **Concluído**; os demais itens permanecem **A refinar**. As dependências abaixo indicam a ordem técnica, sem exigir uma fase completa de documentação antes de programar. BW-10 cobre o acesso demonstrativo inicial; BW-09 e BW-11 cobrem o acesso real posterior. Os IDs existentes foram preservados.
+BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. Por decisão do usuário, a sequência passa a ser ambiente local → classes, ORM e testes → aplicação web e automação de qualidade. BW-15 e BW-16 recebem o trabalho adiado de BW-02. BW-10 cobre o acesso demonstrativo inicial; BW-09 e BW-11 cobrem o acesso real posterior. Os IDs existentes foram preservados.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
 | BW-01 | Alinhar o primeiro fluxo e suas regras | P | — | 1 |
-| BW-02 | Preparar uma base executável e verificável | M | BW-01 | 1 |
-| BW-03 | Modelar e persistir o mínimo do domínio | M | BW-01, BW-02 | 1 |
-| BW-10 | Criar a entrada demonstrativa e navegação | P | BW-02 | 1 |
-| BW-04 | Registrar e listar movimentações de ponta a ponta | M | BW-03 | 1 |
+| BW-02 | Configurar ferramentas locais e executor de testes | P | BW-01 | 1 |
+| BW-03 | Criar classes iniciais, mapeamento ORM e testes | M | BW-01, BW-02 | 1 |
+| BW-15 | Preparar e integrar frontend e backend | M | BW-03 | 1, após domínio e persistência |
+| BW-16 | Configurar lint e CI | P | BW-15 | 1, após aplicação executável |
+| BW-10 | Criar a entrada demonstrativa e navegação | P | BW-15 | 1 |
+| BW-04 | Registrar e listar movimentações de ponta a ponta | M | BW-03, BW-15 | 1 |
 | BW-12 | Gerenciar categorias e subcategorias | M | BW-03, BW-04 | 2 |
 | BW-05 | Consultar o resultado de um mês | P | BW-04 | 2 |
 | BW-06 | Corrigir e excluir lançamentos | P | BW-04 | 2 |
 | BW-07 | Validar a experiência e refinar a próxima entrega | P | BW-05, BW-06 | 2 |
-| BW-08 | Validar a estratégia de persistência e publicação | P | BW-02 | Antes de publicar |
+| BW-08 | Validar a estratégia de persistência e publicação | P | BW-03, BW-15 | Antes de publicar |
 | BW-09 | Autenticar usuários e proteger seus dados | M | BW-03, BW-04, BW-10 | Posterior, antes de uso real |
 | BW-11 | Cadastrar conta e recuperar senha na página de login | M | BW-09 | Posterior, antes de uso real |
 | BW-13 | Planejar o mês e visualizar o calendário | A estimar | BW-05, BW-06 | Posterior |
@@ -63,34 +65,51 @@ BW-01 está **Concluído**; os demais itens permanecem **A refinar**. As depend�
 - Há exemplos concretos: receita de R$ 2.000,00, despesa de R$ 150,50 e resultado de R$ 1.849,50.
 - O escopo da demonstração local e a necessidade de autenticação antes de uso real estão explícitos.
 
-### BW-02 — Preparar uma base executável e verificável
+### BW-02 — Configurar ferramentas locais e executor de testes
 
-**Objetivo:** permitir que qualquer integrante execute e altere o projeto.
+**Estado:** Concluído com escopo reduzido a pedido do usuário. A revisão de encerramento cobre a configuração local e o README resumido; não equivale a uma revisão independente de código ou à entrega da aplicação web.
 
-**Trabalho:** configurar TypeScript, React, backend Node.js, Prisma e scripts de desenvolvimento; manter a separação inicial sugerida abaixo; registrar a decisão do framework de backend conforme as necessidades do primeiro fluxo.
+**Objetivo:** disponibilizar as ferramentas necessárias para começar classes, persistência e testes localmente.
 
-**Critérios de aceite:**
-
-- O README explica instalação, configuração, criação do banco e execução a partir de um clone limpo.
-- Há arquivo de exemplo de variáveis de ambiente sem segredos e regras para ignorar credenciais e banco local.
-- Existem comandos para lint, verificação de tipos, testes e build.
-- Uma CI executa as verificações automatizadas pertinentes em pull requests.
-- O frontend consegue consultar uma rota simples do backend; credenciais e acesso ao banco ficam no servidor.
-
-### BW-03 — Modelar e persistir o mínimo do domínio
-
-**Objetivo:** sustentar o primeiro caso de uso sem antecipar investimentos, recorrências ou IA.
-
-**Trabalho:** revisar o modelo proposto abaixo; implementar o schema Prisma, a primeira migration e um seed de desenvolvimento com dados fictícios.
+**Trabalho entregue:** Prisma, TypeScript e tipos do Node como dependências locais; lockfile; referência de Node; TypeScript estrito; executor `node:test`; `.gitignore`; documentação curta dos comandos.
 
 **Critérios de aceite:**
 
-- A migration cria um banco vazio corretamente e o seed pode ser repetido sem duplicar os dados iniciais.
-- As relações, campos obrigatórios e índices necessários à consulta mensal estão definidos.
-- Valores monetários são armazenados como inteiros em centavos; o limite aceito é documentado e validado.
-- O lançamento só pode usar uma categoria pertencente ao mesmo usuário e compatível com seu tipo.
-- Testes de integração verificam persistência, vínculos e rejeição de dados inválidos.
-- Uma decisão curta registra as convenções de dinheiro, datas e exclusão de registros relacionados.
+- [x] Dependências locais declaradas em `package.json` e registradas no `package-lock.json`, sem depender de instalações globais.
+- [x] Versão de Node documentada e configuração TypeScript estrita disponível.
+- [x] `test`, `test:watch`, `typecheck` e `check` configurados; `npm run check` passa com o teste inicial das ferramentas locais.
+- [x] `.gitignore` exclui dependências, arquivos gerados, segredos e bancos locais, preservando exemplos de ambiente, schema e migrations.
+- [x] README resume instalação, comandos e limitações atuais, sem apresentar o teste do ambiente como teste de negócio.
+
+**Trabalho redistribuído, sem perda de escopo:**
+
+| Trabalho retirado do BW-02 original | Destino |
+| --- | --- |
+| Configuração do banco local, exemplo de variáveis do banco e instruções de criação | BW-03, junto ao schema e testes de persistência |
+| React, backend Node.js, escolha do framework e consulta de uma rota pela interface | BW-15 |
+| Scripts de desenvolvimento/build, ambiente da aplicação e instruções completas de execução | BW-15 |
+| Lint e CI em pull requests | BW-16 |
+
+### BW-03 — Criar classes iniciais, mapeamento ORM e testes
+
+**Objetivo:** construir um primeiro modelo executável do domínio, coerente com o ORM e verificável sem frontend ou servidor HTTP.
+
+**Trabalho:** criar as classes iniciais `User`, `Category` e `Transaction`, com os campos e comportamentos mínimos do primeiro caso de uso; mapear sua persistência com Prisma/SQLite; adicionar testes unitários e de integração. Começar por um caminho pequeno de criação e leitura, sem construir todos os serviços ou operações futuras.
+
+**Limite com BW-02:** instalação do Prisma/TypeScript e configuração do executor de testes já estão concluídas e não serão refeitas. BW-03 configura Prisma Client, conexão e geração necessárias ao schema, além do banco e dos testes de domínio. Os testes complementam `tooling.test.ts`, usando o executor existente.
+
+**Critérios de aceite:**
+
+- Classes iniciais representam usuário, categoria/subcategoria e lançamento, com criação válida e rejeição das entradas inválidas pertinentes. Não basta criar classes vazias ou apenas getters/setters.
+- O schema Prisma corresponde aos campos, tipos, opcionalidade e relações dessas classes. Conversões entre domínio e persistência são explícitas onde necessárias, especialmente dinheiro e datas.
+- Valores são inteiros positivos em centavos, com limite documentado; a data civil é preservada ao salvar e carregar.
+- Categoria e subcategoria respeitam os dois níveis definidos, proprietário e tipo; um lançamento só aceita categoria do mesmo usuário e tipo.
+- A primeira migration cria um banco vazio. O seed usa dados fictícios e categorias iniciais, podendo ser repetido sem duplicação.
+- Há exemplo de configuração sem segredos e instruções/comandos para gerar o cliente, criar o banco e executar o seed. Bancos locais continuam ignorados pelo Git.
+- Testes unitários verificam regras das classes; testes de integração em SQLite isolado verificam criação/leitura, conversão classe ↔ persistência e vínculos inválidos. Não usar o banco pessoal do desenvolvedor.
+- `npm run check` inclui os novos testes. Uma decisão curta registra dinheiro, datas, mapeamento e exclusão de registros relacionados.
+
+**Fora deste item:** React, rotas HTTP, autenticação real, telas de gestão de categorias, CRUD completo, calendário, investimentos, lint e CI. As classes e o schema evoluirão junto com essas entregas. Reutilizar as validações de BW-03 nos fluxos de BW-04/BW-12, sem reimplementá-las em cada tela ou rota.
 
 ### BW-04 — Registrar e listar movimentações de ponta a ponta
 
@@ -233,6 +252,34 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 - Evitar reaplicar diferenças já distribuídas; tratar correções de gastos anteriores e respeitar dias encerrados.
 - Testar os exemplos de R$ 40,00 e R$ 100,00 para orçamento de R$ 50,00, além do último dia do mês e divisão com resto de centavos.
 
+### BW-15 — Preparar e integrar frontend e backend
+
+**Origem:** trabalho de aplicação web retirado de BW-02. Iniciar após BW-03, reaproveitando classes e persistência já testadas.
+
+**Objetivo:** disponibilizar uma aplicação executável para receber as telas e os casos de uso.
+
+**Critérios de aceite:**
+
+- React e backend Node.js executam localmente, com decisão curta sobre o framework de backend.
+- A interface consulta uma rota simples do backend e trata sucesso e erro.
+- Existem scripts documentados de desenvolvimento e build, com configuração TypeScript própria do frontend.
+- As variáveis da aplicação têm exemplos sem segredos; credenciais e acesso ao banco permanecem no backend.
+- O README explica instalação e execução da aplicação a partir de um clone limpo, incluindo os passos de banco já entregues em BW-03.
+- A integração preserva a execução dos testes e a verificação de tipos existentes.
+
+### BW-16 — Configurar lint e CI
+
+**Origem:** automação de qualidade retirada de BW-02. Não bloqueia o desenvolvimento das classes e do ORM em BW-03.
+
+**Objetivo:** automatizar verificações da base de aplicação existente.
+
+**Critérios de aceite:**
+
+- Há comando de lint e regras compatíveis com TypeScript e React adotados pelo projeto.
+- A CI em pull requests instala dependências pelo lockfile e executa lint, verificação de tipos, testes e build.
+- Testes de persistência usam banco descartável e independente de dados locais ou segredos pessoais.
+- Os comandos e o funcionamento da CI estão documentados; a execução remota é verificada antes de encerrar este item.
+
 ## Modelo de dados inicial proposto
 
 Este é um ponto de partida para BW-03, não um schema definitivo. A autenticação pode alterar a estrutura de `User`; não há necessidade de definir armazenamento de senhas nesta etapa.
@@ -311,4 +358,4 @@ Reordenar esta lista após a primeira validação. Não criar agora tabelas ou s
 | Agente de IA | Quais consultas ou registros ele poderá propor, e como o usuário confirmará alterações? |
 | Exportação e recuperação | Como o usuário obterá uma cópia dos próprios dados? |
 
-**Próximo passo sugerido:** refinar e iniciar BW-02, preparando a base executável e verificável. Revisar o modelo de BW-03 ao implementar o primeiro cadastro, usando exemplos reais do fluxo e dados fictícios.
+**Próximo passo sugerido:** refinar e iniciar BW-03 com as classes `User`, `Category` e `Transaction`, mapeamento Prisma e testes locais. Só depois avançar para a aplicação web de BW-15 e automação de BW-16.

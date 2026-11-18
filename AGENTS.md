@@ -18,6 +18,7 @@ O backlog contém propostas e hipóteses, não prova de funcionalidades implemen
 ## Desenvolvimento incremental
 
 - Trabalhe no incremento solicitado, com mudanças pequenas, coesas e demonstráveis.
+- Após a configuração local de BW-02, priorize classes iniciais, mapeamento ORM e testes em BW-03. A integração React/backend e lint/CI ficam para BW-15/BW-16; não são pré-requisitos para começar o domínio.
 - O primeiro fluxo priorizado é Login → Dashboard, com cadastro e consulta de receitas e despesas categorizadas; em seguida, consultar o resultado mensal e corrigir registros. Consulte `docs/USER-FLOW.md` para a navegação e as pendências. Investimentos e Previsões / Acompanhamento mensal dia a dia são abas previstas para incrementos posteriores.
 - Evolua modelagem, implementação e testes juntos. Não modele todo o produto antes de entregar o primeiro fluxo.
 - Não antecipe IA, investimentos, recorrências, cartões ou outras funcionalidades futuras sem necessidade da tarefa atual.
@@ -87,7 +88,7 @@ As seguintes convenções orientam o primeiro incremento. Se o escopo mudar, atu
 
 ## Verificação e entrega
 
-No momento da criação deste guia, o projeto ainda não possui `package.json` nem comandos de aplicação configurados. Não invente comandos ou afirme ter executado verificações indisponíveis. Ao preparar a base em BW-02, documente os comandos reais no README.
+O projeto possui dependências locais, lockfile e comandos de testes e verificação de tipos (`npm run check`). Banco e testes de persistência serão configurados em BW-03; aplicação/build em BW-15 e lint/CI em BW-16. Consulte os scripts atuais antes de executar verificações e documente novos comandos no README; não afirme ter executado verificações indisponíveis.
 
 Em cada alteração:
 

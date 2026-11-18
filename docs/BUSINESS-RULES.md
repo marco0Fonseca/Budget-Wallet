@@ -31,7 +31,7 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 ## Categorias
 
-Usar uma única entidade `Category`, com `parentId` opcional apontando para outra categoria. Uma subcategoria é uma categoria com pai; não precisa de uma classe ou tabela separada. A representação em TypeScript pode acompanhar o modelo Prisma, sem exigir uma classe apenas para armazenar campos.
+Usar uma única entidade `Category`, com `parentId` opcional apontando para outra categoria. Uma subcategoria é uma categoria com pai; não precisa de uma classe ou tabela separada. BW-03 implementará a classe de domínio `Category` e seu mapeamento Prisma, mantendo as regras coerentes entre domínio e persistência.
 
 Sugestão inicial de categorias, copiadas para cada usuário e editáveis:
 

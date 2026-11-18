@@ -36,6 +36,29 @@ O projeto será desenvolvido utilizando:
 
 🚧 **Em desenvolvimento**
 
+## Ambiente de desenvolvimento e testes
+
+Use Node.js 22.19 ou uma versão posterior da linha 22 (referência em `.nvmrc`) e npm. As ferramentas são dependências locais do projeto; instalações globais de TypeScript ou `ts-node` não são necessárias.
+
+Na raiz, instale as versões do lockfile:
+
+```sh
+npm ci
+```
+
+| Comando | Finalidade |
+| --- | --- |
+| `npm test` | Executar os testes com o executor nativo `node:test`. |
+| `npm run test:watch` | Reexecutar os testes ao alterar os arquivos; encerrar com Ctrl+C. |
+| `npm run typecheck` | Verificar tipos TypeScript sem gerar arquivos JavaScript. |
+| `npm run check` | Verificar tipos e, se passarem, executar os testes. |
+
+No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` nos comandos acima.
+
+Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
+
+O teste inicial valida apenas as ferramentas locais. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, banco, build e servidor ainda serão configurados.
+
 ## Planejamento
 
 O [backlog inicial](docs/BACKLOG.md) organiza os primeiros incrementos, os critérios de aceite e uma proposta de modelagem de dados e estrutura do código. Ele será refinado conforme as entregas e o feedback da equipe.
