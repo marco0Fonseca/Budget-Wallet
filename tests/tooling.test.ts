@@ -19,7 +19,7 @@ type ProjectManifest = {
   devDependencies?: Record<string, string>;
 };
 
-test('as ferramentas são declaradas e resolvidas no próprio projeto', async (t) => {
+test('declares and resolves development tools locally', async (t) => {
   const manifest: ProjectManifest = JSON.parse(
     await readFile(new URL('package.json', projectRoot), 'utf8'),
   );

@@ -1,0 +1,74 @@
+datasource db {
+  provider = "sqlite"
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  INVESTMENT
+}
+
+model User {
+  id                 String @id @default(uuid())
+  name               String
+  email              String @unique
+  username           String @unique
+  createdAtTimestamp BigInt
+
+  categories   TransactionCategory[]
+  transactions Transaction[]
+  investments  Investment[]
+}
+
+model TransactionCategory {
+  id       Int             @id @default(autoincrement())
+  label    String
+  type     TransactionType
+  parentId Int?
+  userId   String
+
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  parent   TransactionCategory?  @relation("CategoryHierarchy", fields: [parentId, userId, type], references: [id, userId, type], onDelete: Restrict, onUpdate: Restrict)
+  children TransactionCategory[] @relation("CategoryHierarchy")
+
+  transactions Transaction[]
+  investments  Investment[]
+
+  // Chaves compostas permitem validar proprietário e tipo nas relações.
+  @@unique([id, userId])
+  @@unique([id, userId, type])
+  @@index([userId, type])
+  @@index([parentId, userId, type])
+}
+
+model Transaction {
+  id            Int    @id @default(autoincrement())
+  categoryId    Int
+  amountCents   Int
+  dateTimestamp BigInt
+  userId        String
+  description   String?
+
+  category TransactionCategory @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  user     User                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId, dateTimestamp])
+  @@index([categoryId, userId])
+}
+
+model Investment {
+  id             Int    @id @default(autoincrement())
+  categoryId     Int
+  dateTimestamp  BigInt
+  amountCents    Int
+  monthlyRate    Float
+  monthsDuration Int
+  userId         String
+  description    String?
+
+  category TransactionCategory @relation(fields: [categoryId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  user     User                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([userId, dateTimestamp])
+  @@index([categoryId, userId])
+}

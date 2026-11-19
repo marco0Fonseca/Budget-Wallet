@@ -9,7 +9,11 @@
     "test": "node --test",
     "test:watch": "node --test --watch",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "db:validate": "prisma validate --config prisma.config.ts",
+    "db:migrate": "prisma migrate dev --config prisma.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "db:status": "prisma migrate status --config prisma.config.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

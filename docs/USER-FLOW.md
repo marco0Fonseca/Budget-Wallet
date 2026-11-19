@@ -36,7 +36,7 @@ A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo 
 | Login | Entrar no Dashboard | E-mail ou username, senha e botão Entrar; acesso demonstrativo no primeiro incremento. Cadastro e recuperação na mesma página em incremento posterior. |
 | Dashboard | Entender rapidamente o mês | Mês selecionado, totais de receitas e despesas, resultado mensal, últimas movimentações e atalho para novo lançamento. |
 | Receitas e Despesas | Registrar e consultar movimentações | Lista, filtro por mês e tipo, cadastro com tipo, valor, data, categoria e descrição opcional. Edição e exclusão entram em BW-06. |
-| Investimentos | Consultar e acompanhar investimentos | Aba prevista; definir primeiro se o foco será aportes ou posição e rentabilidade antes de detalhar campos e modelo. |
+| Investimentos | Consultar e acompanhar investimentos | Aba prevista. A entidade inicial simula aporte único com taxa mensal constante; interface, persistência e acompanhamento de movimentações ainda serão refinados. |
 | Previsões / Acompanhamento mensal dia a dia | Planejar e acompanhar a evolução do mês | Calendário com receitas previstas, despesas fixas, meta de economia, orçamento diário editável e redistribuição de sobras/excessos. Regras propostas em `BUSINESS-RULES.md`. |
 
 Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`.

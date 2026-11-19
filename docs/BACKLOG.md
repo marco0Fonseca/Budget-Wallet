@@ -49,6 +49,7 @@ BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. 
 | BW-11 | Cadastrar conta e recuperar senha na página de login | M | BW-09 | Posterior, antes de uso real |
 | BW-13 | Planejar o mês e visualizar o calendário | A estimar | BW-05, BW-06 | Posterior |
 | BW-14 | Redistribuir o orçamento entre dias | A estimar | BW-13 | Posterior |
+| BW-17 | Definir recorrências e regras de datas | A estimar | BW-03 | Posterior, antes de automatizar recorrências |
 
 ### BW-01 — Alinhar o primeiro fluxo e suas regras
 
@@ -92,6 +93,8 @@ BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. 
 
 ### BW-03 — Criar classes iniciais, mapeamento ORM e testes
 
+**Estado:** Em andamento. Classes iniciais, schema Prisma e primeira migration criados; migration aplicada ao SQLite local e validada por testes SQL em memória. Integração do Prisma Client, repositórios/conversões, reconstrução com IDs numéricos persistidos e seed ainda pendentes. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md).
+
 **Objetivo:** construir um primeiro modelo executável do domínio, coerente com o ORM e verificável sem frontend ou servidor HTTP.
 
 **Trabalho:** criar as classes iniciais `User`, `Category` e `Transaction`, com os campos e comportamentos mínimos do primeiro caso de uso; mapear sua persistência com Prisma/SQLite; adicionar testes unitários e de integração. Começar por um caminho pequeno de criação e leitura, sem construir todos os serviços ou operações futuras.
@@ -102,7 +105,7 @@ BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. 
 
 - Classes iniciais representam usuário, categoria/subcategoria e lançamento, com criação válida e rejeição das entradas inválidas pertinentes. Não basta criar classes vazias ou apenas getters/setters.
 - O schema Prisma corresponde aos campos, tipos, opcionalidade e relações dessas classes. Conversões entre domínio e persistência são explícitas onde necessárias, especialmente dinheiro e datas.
-- Valores são inteiros positivos em centavos, com limite documentado; a data civil é preservada ao salvar e carregar.
+- Valores são inteiros positivos em centavos, com limite documentado; o timestamp informado é preservado ao salvar e carregar. A restrição de datas futuras e as convenções de recorrência foram adiadas para BW-17.
 - Categoria e subcategoria respeitam os dois níveis definidos, proprietário e tipo; um lançamento só aceita categoria do mesmo usuário e tipo.
 - A primeira migration cria um banco vazio. O seed usa dados fictícios e categorias iniciais, podendo ser repetido sem duplicação.
 - Há exemplo de configuração sem segredos e instruções/comandos para gerar o cliente, criar o banco e executar o seed. Bancos locais continuam ignorados pelo Git.
@@ -280,15 +283,32 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 - Testes de persistência usam banco descartável e independente de dados locais ou segredos pessoais.
 - Os comandos e o funcionamento da CI estão documentados; a execução remota é verificada antes de encerrar este item.
 
+### BW-17 — Definir recorrências e regras de datas
+
+**Estado:** A refinar. Pendência registrada a pedido do usuário: manter o modelo inicial simples, sem bloquear datas futuras em `Transaction` por enquanto.
+
+**Objetivo:** definir como movimentações recorrentes são agendadas e como suas datas se relacionam com previsão e realização.
+
+**Pontos a decidir antes da implementação:**
+
+- Frequências diária, mensal e anual; avaliar semanal e intervalos personalizados conforme necessidade.
+- Data de início, término opcional ou número de ocorrências e tratamento de pausas/cancelamentos.
+- Comportamento para dia 29 de fevereiro e dias 29, 30 ou 31 inexistentes no mês de destino.
+- Referência de fuso, representação da data financeira e distinção entre ocorrência prevista e lançamento realizado; definir quando datas futuras são aceitas em cada caso.
+- Se cada ocorrência gera previsão, lançamento automático ou solicitação de confirmação.
+- Como editar uma ocorrência ou toda a série e impedir geração duplicada ao repetir a operação.
+
+**Critérios de aceite a detalhar no refinamento:** regras aprovadas em `BUSINESS-RULES.md`, modelo correspondente e testes de frequências, viradas de mês/ano, ano bissexto e geração sem duplicação. Integrar ao calendário de BW-13 quando ambos estiverem disponíveis. A validação básica de um timestamp válido permanece; o adiamento trata das regras temporais do negócio.
+
 ## Modelo de dados inicial proposto
 
 Este é um ponto de partida para BW-03, não um schema definitivo. A autenticação pode alterar a estrutura de `User`; não há necessidade de definir armazenamento de senhas nesta etapa.
 
 | Entidade | Campos iniciais | Responsabilidade |
 | --- | --- | --- |
-| `User` | `id`, `createdAt` | Identificar o proprietário dos dados; identidade de autenticação será refinada em BW-09. |
+| `User` | `id`, `name`, `email`, `username`, `createdAt` | Identificar o proprietário e seu perfil; classe inicial implementada, mapeamento e unicidade ainda pendentes. Autenticação será refinada em BW-09. |
 | `Category` | `id`, `userId`, `parentId?`, `name`, `type`, `archivedAt?`, `createdAt` | Classificar lançamentos; vínculo opcional com categoria pai do mesmo usuário e tipo. |
-| `Transaction` | `id`, `userId`, `categoryId`, `type`, `amountCents`, `occurredOn`, `description?`, `createdAt`, `updatedAt` | Registrar uma movimentação realizada. |
+| `Transaction` | `id`, `userId`, `categoryId`, `type`, `amountCents`, `dateTimestamp`, `description?` | Proposta alinhada aos campos atuais; mapeamento ORM ainda pendente. Datas e recorrências serão refinadas em BW-17. |
 
 ```mermaid
 erDiagram
@@ -301,13 +321,13 @@ erDiagram
 Regras propostas:
 
 - `type` aceita `INCOME` ou `EXPENSE`; o valor é sempre positivo e o tipo determina como ele entra no resultado.
-- `occurredOn` representa uma data civil, sem horário. A representação no SQLite/Prisma será definida em BW-03, mantendo o mesmo dia na entrada, armazenamento e exibição.
+- A classe usa provisoriamente `dateTimestamp` em milissegundos. BW-03 deve preservar seu valor no banco; a representação definitiva da data financeira e o tratamento de datas futuras serão refinados em BW-17.
 - `createdAt` e `updatedAt` representam instantes de auditoria técnica, distintos da data financeira.
 - Categoria é obrigatória; sugestões iniciais e hierarquia estão em `BUSINESS-RULES.md`.
 - Nomes normalizados são únicos por usuário, tipo e pai (incluindo categorias raiz). Validar também ciclos e a hierarquia permitida.
 - A combinação proprietário/categoria e a compatibilidade de tipos precisam ser validadas no servidor; uma chave estrangeira de categoria, sozinha, não garante essas regras.
 - Categorias em uso não podem ser excluídas sem reclassificação dos lançamentos. Não implementar exclusão de usuários nesta etapa.
-- Considerar índice composto por `userId` e `occurredOn` para consulta por usuário e mês, além dos índices exigidos pelas relações.
+- Considerar índice composto por `userId` e o campo de data persistido para consulta por usuário e mês, além dos índices exigidos pelas relações.
 - Totais mensais são derivados dos lançamentos, sem tabela de saldo nesta etapa.
 
 ## Estrutura de código inicial proposta
@@ -350,10 +370,10 @@ Reordenar esta lista após a primeira validação. Não criar agora tabelas ou s
 
 | Tema | Próxima pergunta a responder |
 | --- | --- |
-| Despesas recorrentes e assinaturas | A recorrência gera previsão, lançamento automático ou pedido de confirmação? |
+| Assinaturas | Quais informações específicas de assinaturas serão necessárias além da recorrência de BW-17? |
 | Contas, cartões e transferências | É necessário distinguir saldo por conta e evitar contar transferências como receita? |
 | Dashboards | Quais decisões não são atendidas pela lista e pelos totais mensais? |
-| Investimentos | O primeiro objetivo é registrar aportes ou acompanhar valorização? |
+| Investimentos | A entidade inicial já simula aporte único com taxa mensal constante. Refinar persistência, vínculo com aportes/resgates realizados e interface; aportes periódicos dependem das decisões de BW-17. |
 | Previsão financeira avançada | Além do calendário e orçamento de BW-13/BW-14, quais estimativas são necessárias? |
 | Agente de IA | Quais consultas ou registros ele poderá propor, e como o usuário confirmará alterações? |
 | Exportação e recuperação | Como o usuário obterá uma cópia dos próprios dados? |

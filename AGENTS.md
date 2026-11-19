@@ -58,7 +58,7 @@ As seguintes convenções orientam o primeiro incremento. Se o escopo mudar, atu
 - Valide a conversão do texto digitado para centavos, a precisão permitida e os limites do banco e da aritmética utilizada, incluindo totais.
 - O valor do lançamento é positivo; `INCOME` ou `EXPENSE` determina seu efeito no resultado.
 - Resultado mensal é receitas menos despesas do período. Não o apresente como saldo bancário.
-- A data financeira (`occurredOn`) representa um dia civil; não permita que conversões de fuso alterem o dia informado. Defina sua representação antes de implementar a persistência.
+- A classe `Transaction` usa provisoriamente `dateTimestamp` em milissegundos; preserve o valor ao persistir. Por decisão do usuário, não restaurar a proibição de datas futuras nesta etapa. A representação definitiva da data financeira e as regras de recorrência serão refinadas em BW-17.
 - `createdAt` e `updatedAt` representam instantes técnicos, separados da data financeira.
 - Filtros mensais incluem o início do mês e excluem o início do mês seguinte. Totais devem considerar todo o período, independentemente da paginação.
 - Cada lançamento tem uma categoria do mesmo proprietário e compatível com seu tipo. Valide essas relações no servidor; uma chave estrangeira isolada não basta.

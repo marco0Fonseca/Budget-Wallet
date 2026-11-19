@@ -57,7 +57,21 @@ No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` 
 
 Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
 
-O teste inicial valida apenas as ferramentas locais. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, banco, build e servidor ainda serão configurados.
+Os testes cobrem ferramentas locais, entidades e a migration inicial em SQLite. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, build e servidor ainda serão configurados.
+
+## Banco local e migrations
+
+O schema Prisma usa SQLite e acompanha as quatro entidades iniciais. Para criar ou atualizar o banco local com as migrations versionadas, execute na raiz:
+
+```sh
+npm run db:validate
+npm run db:deploy
+npm run db:status
+```
+
+O banco padrão é `dev.db` na raiz, ignorado pelo Git. Para mudar a conexão, copie `.env.example` para `.env` e ajuste `DATABASE_URL`. Para futuras alterações no schema, use `npm run db:migrate -- --name nome_da_alteracao` em um banco de desenvolvimento.
+
+Os testes de schema aplicam o SQL em SQLite em memória. Prisma Client, adapter, repositórios e seed ainda não foram configurados. As decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md).
 
 ## Planejamento
 

@@ -18,12 +18,21 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 - Autenticação real, cadastro e recuperação de senha entram posteriormente em BW-09/BW-11, antes de uso real.
 - No acesso real, categorias, lançamentos e planejamento pertencem ao usuário autenticado. A identidade vem da sessão validada; outro usuário não pode consultar nem modificar esses dados.
 
+## Perfil do usuário
+
+- A entidade `User` contém `id`, `name`, `email`, `username` e `createdAt`, sem senha. Novos usuários recebem UUID; a reconstrução do banco preserva identificador e data originais.
+- Nome e e-mail são obrigatórios e têm espaços externos removidos; o e-mail recebe validação básica de formato, sem comprovar que o endereço existe.
+- Convenção inicial de username: obrigatório, permitindo apenas letras ASCII minúsculas, números, ponto, hífen e sublinhado. Remover espaços externos; rejeitar maiúsculas sem convertê-las automaticamente. Não aceitar espaços internos ou `@`, distinguindo username de e-mail no login futuro.
+- Os campos não podem ser alterados diretamente após a construção. Alterações de perfil deverão passar por operações validadas quando forem implementadas.
+- Unicidade de e-mail e username depende da persistência e ainda não é garantida pela classe. Refinar a normalização de e-mail no cadastro antes de criar sua restrição de unicidade.
+
 ## Lançamentos, valores e datas
 
-- Cada lançamento realizado tem tipo receita ou despesa, valor positivo em centavos, data civil e uma categoria do mesmo proprietário e tipo. Descrição é opcional.
-- O tipo determina o efeito no resultado; o valor armazenado não deve ser negativo. Limites numéricos serão especificados em BW-03.
-- Lançamentos realizados aceitam datas até hoje. Datas futuras pertencem às previsões do incremento de planejamento e não entram nos totais realizados.
-- Convenção técnica inicial para “hoje”: `America/Sao_Paulo`. Manter a data civil informada sem deslocá-la por conversão de fuso. Configuração de fuso por usuário pode ser refinada posteriormente.
+- Cada lançamento tem valor positivo em centavos, data e categoria do mesmo proprietário. Descrição é opcional; o tipo vem da categoria.
+- `Transaction.amountCents` é um campo `readonly` expresso em inteiros de 1 a 2.147.483.647 centavos, sem arredondamento automático. A conversão da entrada em reais deve ocorrer antes de construir a entidade. `monetaryValue()` retorna uma string com ponto e duas casas decimais (1550 → "15.50"), apenas para apresentação; cálculos usam centavos. Não há getter/setter `value`. Totais agregados precisam de validação própria de limite.
+- A classe usa provisoriamente `dateTimestamp` em milissegundos, com validação básica de data válida. A descrição opcional fica no final do construtor, tem espaços externos removidos e, se vazia, é omitida.
+- Por decisão do usuário, a proibição de datas futuras foi suspensa nesta versão. Isso não significa que uma ocorrência futura já tenha sido paga ou recebida; a distinção entre previsto e realizado será refinada em BW-17 antes de automatizar recorrências.
+- A convenção inicial de fuso para apresentação é `America/Sao_Paulo`; a representação definitiva da data financeira e sua aplicação às recorrências serão revisadas em BW-17.
 - Resultado mensal = receitas realizadas menos despesas realizadas no mês. O período inclui o primeiro dia e exclui o primeiro dia do mês seguinte; os totais independem da paginação.
 - Resultado acumulado até um dia considera os lançamentos desde o início do mês até esse dia. Nenhum desses resultados representa saldo bancário.
 - Mês sem lançamentos tem totais zerados. Exemplo: receita de R$ 2.000,00 menos despesa de R$ 150,50 resulta em R$ 1.849,50.
@@ -58,7 +67,22 @@ Regras propostas:
 - Não alterar o tipo de categoria usada nem excluir registros vinculados. Ao mover uma subcategoria, informar que a agregação histórica passará a seguir a nova árvore; essa política precisa ser validada antes da implementação.
 - Despesa fixa/variável é uma característica do planejamento, não da categoria: “Alimentação” pode conter ambos os casos.
 
-## Estado do dia
+## Investimentos — projeção inicial de aporte único
+
+- `Investment` é uma entidade independente de `Transaction`, com aporte inicial em `amountCents`, data em `dateTimestamp`, usuário, categoria do tipo `INVESTMENT`, `monthlyRate` e `monthsDuration`. Não gera lançamentos financeiros automaticamente.
+- O usuário deve ser o proprietário da categoria. O aporte inicial segue o limite de 1 a 2.147.483.647 centavos. O ID numérico ainda é provisório até a persistência.
+- `monthlyRate` é uma fração mensal constante: `0.01` corresponde a 1% ao mês. Taxa zero é válida; taxas negativas maiores que `-1` permitem simular perdas. Rejeitar taxas não finitas e valores iguais ou inferiores a `-1`.
+- `monthsDuration` é um inteiro positivo. Projeções usam meses inteiros não negativos; períodos superiores ao prazo ficam limitados à duração informada.
+- `projectedAmountCents(n)` calcula aporte × (1 + taxa mensal)^n; `projectedGainCents(n)` desconta o aporte inicial. Ambos retornam centavos, com arredondamento do montante apenas no resultado final e rejeição de resultados fora dos inteiros seguros do JavaScript. Sem argumento, usam o prazo completo.
+- `projectedAmountOn(timestamp)` e `projectedGainOn(timestamp)` calculam por meses completos desde o início. Como convenção desta simulação, aniversários usam UTC e preservam o horário; dias inexistentes caem no último dia do mês, sem perder a referência ao dia original nos meses seguintes. Exemplo: 31/01 → 28 ou 29/02 → 31/03. Essa convenção não implementa a recorrência geral de BW-17.
+- Datas de consulta anteriores ao início e timestamps inválidos são rejeitados. Uma data de início futura pode ser cadastrada, mas `projectedGainUntilNow()` também rejeita a consulta enquanto ela anteceder o início.
+- A projeção considera somente aporte único e taxa constante, sem impostos, tarifas, resgates ou rentabilidade observada. Aportes periódicos e vínculos com movimentações continuam pendentes de modelagem; não usar a projeção como rendimento já realizado no Dashboard.
+
+## Recorrências — pendência BW-17
+
+Definir frequências diária, mensal e anual, início e término, tratamento de dias inexistentes no mês e anos bissextos. Também decidir geração de previsões ou lançamentos, confirmação, alterações da série, cancelamento e prevenção de duplicações. Não implementar essas regras na classe inicial; registrar e refinar antes do incremento de recorrência.
+
+## Estado do dia no planejamento
 
 Enquanto o dia estiver aberto, mostrar “disponível hoje”, não uma sobra definitiva. Proposta: permitir encerrar o dia manualmente e sugerir a redistribuição ao revisar um dia passado. Não tratar dia futuro sem lançamentos como economia realizada.
 
