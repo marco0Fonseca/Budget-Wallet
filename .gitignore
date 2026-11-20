@@ -1,6 +1,9 @@
 # Dependências instaladas localmente
 node_modules/
 
+# Prisma Client gerado localmente
+/src/generated/prisma/
+
 # Builds, cache e relatórios gerados
 dist/
 build/

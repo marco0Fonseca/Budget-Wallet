@@ -1,3 +1,10 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
 datasource db {
   provider = "sqlite"
 }
@@ -13,6 +20,7 @@ model User {
   name               String
   email              String @unique
   username           String @unique
+  passwordHash       String 
   createdAtTimestamp BigInt
 
   categories   TransactionCategory[]

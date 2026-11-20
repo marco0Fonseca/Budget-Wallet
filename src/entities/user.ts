@@ -13,18 +13,6 @@ export class User {
   public readonly createdAtTimestamp: number;
 
   constructor(id : string|null , name: string, email: string, username: string,  createdAtTimestamp: number = Date.now()) {
-    if (typeof name !== 'string' || name.trim().length === 0) {
-      throw new Error('Name is required.');
-    }
-
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      throw new Error('Invalid E-mail.');
-    }
-
-    if (typeof username !== 'string' || !/^[a-z0-9._-]+$/.test(username.trim())) {
-      throw new Error('Username must contain only lowercase letters, numbers, dots, hyphens or underscores.');
-    }
-
     const userId = id ?? randomUUID();
     const createdAt = new Date(createdAtTimestamp);
 
@@ -37,11 +25,35 @@ export class User {
     }
 
     this.id = userId;
-    this.name = name.trim();
-    this.email = email.trim();
-    this.username = username.trim();
+    this.name = User.validateName(name);
+    this.email = User.validateEmail(email);
+    this.username = User.validateUsername(username);
     this.createdAtTimestamp = createdAt.getTime();
 
     Object.freeze(this);
   }
+
+  static validateUsername(username: string): string {
+    if (typeof username !== 'string' || !/^[a-z0-9._-]+$/.test(username.trim())) {
+      throw new Error('Username must contain only lowercase letters, numbers, dots, hyphens or underscores.');
+    }
+
+    return username.trim();
+  }
+
+  static validateName(name: string): string {
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      throw new Error('Name is required.');
+    }
+
+    return name.trim();
+  }
+  
+  static validateEmail(email: string): string {
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      throw new Error('Invalid E-mail.');
+    }
+
+    return email.trim();
+  } 
 }
