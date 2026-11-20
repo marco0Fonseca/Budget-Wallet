@@ -20,6 +20,8 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 ## Perfil do usuário
 
+- Ao excluir um usuário, suas categorias, subcategorias, transações e investimentos são excluídos em cascata. Os dados dos demais usuários permanecem intactos. Excluir uma categoria isoladamente continua bloqueado enquanto houver subcategorias ou movimentações vinculadas. Decisão de persistência: [Exclusão de usuário](decisions/0002-user-deletion.md).
+
 - A entidade `User` contém `id`, `name`, `email`, `username` e `createdAt`, sem senha. Novos usuários recebem UUID; a reconstrução do banco preserva identificador e data originais.
 - Nome e e-mail são obrigatórios e têm espaços externos removidos; o e-mail recebe validação básica de formato, sem comprovar que o endereço existe.
 - Convenção inicial de username: obrigatório, permitindo apenas letras ASCII minúsculas, números, ponto, hífen e sublinhado. Remover espaços externos; rejeitar maiúsculas sem convertê-las automaticamente. Não aceitar espaços internos ou `@`, distinguindo username de e-mail no login futuro.
