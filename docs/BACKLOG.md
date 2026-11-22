@@ -87,7 +87,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 | Trabalho retirado do BW-02 original | Destino |
 | --- | --- |
 | Configuração do banco local, exemplo de variáveis do banco e instruções de criação | BW-03, junto ao schema e testes de persistência |
-| React, backend Node.js, escolha do framework e consulta de uma rota pela interface | BW-15 |
+| React, backend Express em Node.js e consulta de uma rota pela interface | BW-15 |
 | Scripts de desenvolvimento/build, ambiente da aplicação e instruções completas de execução | BW-15 |
 | Lint e CI em pull requests | BW-16 |
 
@@ -263,11 +263,13 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 
 **Origem:** trabalho de aplicação web retirado de BW-02. Iniciar após BW-03, reaproveitando classes e persistência já testadas.
 
+**Decisão de stack:** backend HTTP com Express, registrada em [ADR 0003](decisions/0003-express-backend.md).
+
 **Objetivo:** disponibilizar uma aplicação executável para receber as telas e os casos de uso.
 
 **Critérios de aceite:**
 
-- React e backend Node.js executam localmente, com decisão curta sobre o framework de backend.
+- React e backend Express executam localmente; Express e tipos necessários estão declarados como dependências locais.
 - A interface consulta uma rota simples do backend e trata sucesso e erro.
 - Existem scripts documentados de desenvolvimento e build, com configuração TypeScript própria do frontend.
 - As variáveis da aplicação têm exemplos sem segredos; credenciais e acesso ao banco permanecem no backend.

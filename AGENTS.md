@@ -29,14 +29,15 @@ O backlog contém propostas e hipóteses, não prova de funcionalidades implemen
 
 ## Stack e organização
 
-A stack prevista é TypeScript, React, Node.js/npm, Prisma e SQLite. A Vercel é a opção de hospedagem prevista, sujeita à validação de persistência descrita em BW-08.
+A stack definida é TypeScript e React no frontend, com Node.js e Express no backend; Prisma e SQLite cuidam da persistência. A Vercel é a opção de hospedagem prevista, sujeita à validação de persistência descrita em BW-08. A decisão sobre Express está em `docs/decisions/0003-express-backend.md`; o framework ainda será integrado em BW-15.
 
 Organização inicial, a ajustar conforme as decisões registradas:
 
 | Caminho | Responsabilidade |
 | --- | --- |
 | `frontend/` | Interface React, organizada por funcionalidades quando necessário. |
-| `src/` | Backend, rotas, validação e regras de negócio. |
+| `src/server/` | Aplicação HTTP Express, rotas e integração com os casos de uso. |
+| `src/` | Entidades, casos de uso, validação e regras de negócio. |
 | `src/db/` | Configuração do acesso ao banco pelo Prisma. |
 | `prisma/` | Schema, migrations e seed de desenvolvimento. |
 | `docs/` | Backlog e decisões técnicas. |
