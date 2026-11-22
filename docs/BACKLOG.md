@@ -269,7 +269,7 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 
 **Critérios de aceite:**
 
-- React e backend Express executam localmente; Express e tipos necessários estão declarados como dependências locais.
+- React, React DOM, Express e tipos TypeScript estão declarados como dependências locais; a aplicação frontend e o backend Express executam localmente.
 - A interface consulta uma rota simples do backend e trata sucesso e erro.
 - Existem scripts documentados de desenvolvimento e build, com configuração TypeScript própria do frontend.
 - As variáveis da aplicação têm exemplos sem segredos; credenciais e acesso ao banco permanecem no backend.

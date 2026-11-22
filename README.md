@@ -33,7 +33,7 @@ O projeto será desenvolvido utilizando:
 - **Node.js / npm**
 - **Vercel**
 
-O frontend será React e o backend HTTP será Express, executado em Node.js. Essa escolha está registrada em [ADR 0003](docs/decisions/0003-express-backend.md). Express ainda será instalado e integrado em BW-15; a stack documentada não significa que o servidor HTTP já esteja implementado.
+O frontend será React e o backend HTTP será Express, executado em Node.js. React, React DOM, Express e seus tipos TypeScript já estão declarados como dependências locais. A configuração do frontend e a integração do servidor HTTP continuam em BW-15; as dependências instaladas ainda não significam que a aplicação esteja implementada. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 

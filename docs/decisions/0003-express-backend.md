@@ -12,6 +12,6 @@ Usar Express como framework HTTP do backend. As rotas devem delegar validação 
 
 - O contrato HTTP será explícito e independente dos componentes React.
 - A camada de rotas não deve concentrar regras de negócio nem expor erros internos.
-- Express e os tipos TypeScript correspondentes serão dependências locais quando BW-15 implementar o servidor.
+- Express e seus tipos TypeScript são dependências locais. A configuração e integração do servidor HTTP permanecem em BW-15.
 
 Reconsiderar a escolha se requisitos de execução, hospedagem ou manutenção mostrarem que Express não atende ao projeto.
