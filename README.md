@@ -33,7 +33,7 @@ O projeto será desenvolvido utilizando:
 - **Node.js / npm**
 - **Vercel**
 
-O frontend será React e o backend HTTP será Express, executado em Node.js. React, React DOM, Express e seus tipos TypeScript já estão declarados como dependências locais. A configuração do frontend e a integração do servidor HTTP continuam em BW-15; as dependências instaladas ainda não significam que a aplicação esteja implementada. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
+O frontend usa React com Vite e o backend HTTP será Express, executado em Node.js. A tela de login e uma página de destino vazia já funcionam localmente; a integração HTTP e o restante da aplicação continuam em BW-15. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 
@@ -55,12 +55,16 @@ npm ci
 | `npm run test:watch` | Reexecutar os testes ao alterar os arquivos; encerrar com Ctrl+C. |
 | `npm run typecheck` | Verificar tipos TypeScript sem gerar arquivos JavaScript. |
 | `npm run check` | Verificar tipos e, se passarem, executar os testes. |
+| `npm run dev:frontend` | Abrir o frontend local em modo de desenvolvimento. |
+| `npm run build:frontend` | Gerar o build do frontend em `dist/frontend/`. |
 
 No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` nos comandos acima.
 
 Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
 
-Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, build e servidor ainda serão configurados.
+Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor HTTP ainda será configurado.
+
+Para ver a tela de login, execute `npm run dev:frontend` e abra o endereço exibido pelo Vite. No ambiente local, qualquer identificador e senha não vazios permitem entrar na página vazia do Dashboard. O acesso demonstrativo não valida credenciais, não cria conta e não salva a senha. Os controles **Criar conta** e **Esqueceu a senha?** mostram estados informativos; cadastro e recuperação ainda não enviam dados. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações. O acesso demonstrativo fica indisponível no build de produção até a autenticação real ser implementada.
 
 ## Automação de navegador
 

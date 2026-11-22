@@ -1,0 +1,191 @@
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+
+const demoSessionKey = 'budgetwallet-demo-session';
+const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const percentFormatter = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 });
+const monthYearFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
+const shortMonthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'short' });
+const shortDateFormatter = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' });
+const formatPreviewCurrency = (cents: number) => currencyFormatter.format(cents / 100);
+const previewMonth = new Date(2026, 10, 1);
+type LoginView = 'login' | 'create' | 'recover';
+type LoginErrors = { identifier?: string; password?: string; form?: string };
+
+function readLoginView(): LoginView {
+  const view = new URLSearchParams(location.search).get('view');
+  return view === 'create' || view === 'recover' ? view : 'login';
+}
+
+type IconName = 'wallet' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'chart' | 'calendar' | 'receipt' | 'trend' | 'arrowUp' | 'arrowDown' | 'equal' | 'restaurant' | 'market';
+
+function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
+  const paths: Record<IconName, ReactNode> = {
+    wallet: <><path d="M3 7.5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z" /><path d="M3 8V6a2 2 0 0 1 1.5-1.94l11-2.75a2 2 0 0 1 2.5 1.94V7.5" /><path d="M17 14.5h4" /><circle cx="17" cy="14.5" r=".5" fill="currentColor" stroke="none" /></>,
+    mail: <><rect x="2.5" y="5" width="19" height="14" rx="2" /><path d="m3.5 6 8.5 7 8.5-7" /></>,
+    lock: <><rect x="4.5" y="10" width="15" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
+    eye: <><path d="M2 12s3.6-5.5 10-5.5S22 12 22 12s-3.6 5.5-10 5.5S2 12 2 12Z" /><circle cx="12" cy="12" r="2.5" /></>,
+    eyeOff: <><path d="m3 3 18 18" /><path d="M9.9 6.7A12 12 0 0 1 12 6.5c6.4 0 10 5.5 10 5.5a16 16 0 0 1-3.3 3.6M6.2 8.2C3.5 9.8 2 12 2 12s3.6 5.5 10 5.5c1.2 0 2.3-.2 3.3-.6" /><path d="M10 10a2.8 2.8 0 0 0 4 4" /></>,
+    chart: <><path d="M4 19V12M10 19V8M16 19V4M22 19v-9" /></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></>,
+    receipt: <><path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3Z" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+    trend: <><path d="m3 17 6-6 4 3 8-9" /><path d="M16 5h5v5" /></>,
+    arrowUp: <><path d="M12 20V4" /><path d="m5 11 7-7 7 7" /></>,
+    arrowDown: <><path d="M12 4v16" /><path d="m5 13 7 7 7-7" /></>,
+    equal: <><path d="M5 9h14M5 15h14" /></>,
+    restaurant: <><path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M20 21V3c-4 3-5 7-5 11h5" /></>,
+    market: <><path d="M3 10h18l-2 10H5L3 10Z" /><path d="m8 10 4-7 4 7M9 14v3M15 14v3" /></>,
+  };
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
+}
+
+function Brand() {
+  return <div className="brand"><span className="brand-icon"><Icon name="wallet" size={30} /></span><span translate="no">BudgetWallet</span></div>;
+}
+
+function PreviewPanels() {
+  const bars = [58, 76, 53, 46, 64, 68];
+  const months = bars.map((_, index) => shortMonthFormatter.format(new Date(2026, 5 + index, 1)));
+  return (
+    <div className="preview" aria-hidden="true">
+      <div className="preview-summary preview-card">
+        <div className="preview-heading"><span className="preview-heading-icon"><Icon name="chart" size={23} /></span><strong>Resumo do mês</strong><span className="preview-period">{monthYearFormatter.format(previewMonth)}</span></div>
+        <div className="summary-grid">
+          <div className="summary-item income"><span className="summary-label"><span className="metric-arrow"><Icon name="arrowUp" size={17} /></span>Receitas</span><strong>{formatPreviewCurrency(520000)}</strong></div>
+          <div className="summary-item expense"><span className="summary-label"><span className="metric-arrow"><Icon name="arrowDown" size={17} /></span>Despesas</span><strong>{formatPreviewCurrency(235000)}</strong></div>
+          <div className="summary-item result"><span className="summary-label"><span className="metric-arrow"><Icon name="equal" size={17} /></span>Resultado</span><strong>{formatPreviewCurrency(285000)}</strong></div>
+        </div>
+      </div>
+
+      <div className="preview-chart preview-card">
+        <div className="preview-heading"><span className="preview-heading-icon"><Icon name="receipt" size={22} /></span><strong>Despesas mensais</strong><span className="preview-period">Últimos 6 meses</span></div>
+        <div className="chart-area"><div className="chart-grid" /><div className="bar-list">{bars.map((height, index) => <div className="bar-slot" key={months[index]}><div className="bar" style={{ height: `${height}%` }} /><span>{months[index]}</span></div>)}</div></div>
+      </div>
+
+      <div className="preview-investment preview-card">
+        <div className="preview-heading"><span className="preview-heading-icon"><Icon name="trend" size={22} /></span><strong>Investimentos</strong></div>
+        <p>Variação ilustrativa</p><strong className="investment-number">+ {percentFormatter.format(0.0834)}</strong>
+        <svg className="investment-curve" viewBox="0 0 240 72" preserveAspectRatio="none"><path d="M0 66C20 59 20 48 40 54S66 62 82 45s28 7 46-9 20 3 42-13 28 5 44-11 20-9 26-12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
+      </div>
+
+      <div className="preview-transactions preview-card">
+        <div className="preview-heading"><span className="preview-heading-icon"><Icon name="receipt" size={22} /></span><strong>Transações recentes</strong></div>
+        <div className="transaction-row"><span className="transaction-symbol food"><Icon name="restaurant" size={19} /></span><span className="transaction-text"><strong>Restaurante</strong><small>{shortDateFormatter.format(new Date(2026, 10, 15))}</small></span><strong className="transaction-value negative">− {formatPreviewCurrency(6890)}</strong></div>
+        <div className="transaction-row"><span className="transaction-symbol market"><Icon name="market" size={19} /></span><span className="transaction-text"><strong>Mercado</strong><small>{shortDateFormatter.format(new Date(2026, 10, 13))}</small></span><strong className="transaction-value negative">− {formatPreviewCurrency(32045)}</strong></div>
+        <div className="transaction-row"><span className="transaction-symbol salary"><Icon name="trend" size={19} /></span><span className="transaction-text"><strong>Salário</strong><small>{shortDateFormatter.format(new Date(2026, 10, 10))}</small></span><strong className="transaction-value positive">+ {formatPreviewCurrency(520000)}</strong></div>
+      </div>
+
+      <div className="preview-planning preview-card">
+        <div className="preview-heading"><span className="preview-heading-icon"><Icon name="calendar" size={22} /></span><strong>Planejamento diário</strong><span className="preview-period">{monthFormatter.format(previewMonth)}</span></div>
+        <div className="week-strip">{['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day, index) => <div className="day" key={day}><span>{day}</span><strong className={index === 2 ? 'selected-day' : ''}>{16 + index}</strong></div>)}</div>
+      </div>
+    </div>
+  );
+}
+
+function readDemoSession() {
+  return import.meta.env.DEV && sessionStorage.getItem(demoSessionKey) === '1';
+}
+
+export function App() {
+  const [entered, setEntered] = useState(readDemoSession);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<LoginErrors>({});
+  const identifierRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const loginView = readLoginView();
+
+  useEffect(() => {
+    const titles: Record<LoginView, string> = { login: 'Entrar', create: 'Criar conta', recover: 'Recuperar senha' };
+    document.title = entered ? 'Dashboard · BudgetWallet' : `${titles[loginView]} · BudgetWallet`;
+  }, [entered, loginView]);
+
+  useEffect(() => {
+    const normalizeRoute = () => {
+      if (location.pathname === '/dashboard' && !entered) history.replaceState(null, '', '/');
+      if (location.pathname !== '/dashboard' && entered) history.replaceState(null, '', '/dashboard');
+    };
+    normalizeRoute();
+    window.addEventListener('popstate', normalizeRoute);
+    return () => window.removeEventListener('popstate', normalizeRoute);
+  }, [entered]);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextErrors: LoginErrors = {};
+    if (!identifier.trim()) nextErrors.identifier = 'Informe seu e-mail ou username.';
+    if (!password.trim()) nextErrors.password = 'Informe sua senha.';
+    if (nextErrors.identifier || nextErrors.password) {
+      setErrors(nextErrors);
+      (nextErrors.identifier ? identifierRef : passwordRef).current?.focus();
+      return;
+    }
+    if (!import.meta.env.DEV) {
+      setErrors({ form: 'O acesso demonstrativo está disponível apenas no ambiente local.' });
+      return;
+    }
+    sessionStorage.setItem(demoSessionKey, '1');
+    setPassword('');
+    setErrors({});
+    setEntered(true);
+    history.pushState(null, '', '/dashboard');
+  }
+
+  function clearFieldError(field: 'identifier' | 'password') {
+    setErrors(current => {
+      const next = { ...current };
+      delete next[field];
+      delete next.form;
+      return next;
+    });
+  }
+
+  function signOut() {
+    sessionStorage.removeItem(demoSessionKey);
+    setIdentifier('');
+    setPassword('');
+    setShowPassword(false);
+    setEntered(false);
+    history.pushState(null, '', '/');
+  }
+
+  if (entered) {
+    return <div className="dashboard-placeholder"><header><Brand /><button className="sign-out" type="button" onClick={signOut}>Sair</button></header><main id="dashboard-main" tabIndex={-1}><h1>Dashboard</h1></main></div>;
+  }
+
+  return (
+    <main className="login-page">
+      <div className="login-layout">
+        <section className="login-card" aria-labelledby="login-title">
+          <Brand />
+          {loginView === 'login' ? (
+            <div className="login-content">
+              <h1 id="login-title" tabIndex={-1}>Organize seu<br /> dinheiro</h1>
+              <p className="login-intro">Acompanhe receitas, despesas e seu resultado mensal em um só lugar.</p>
+              <form onSubmit={submit} noValidate>
+                <div className="field"><label htmlFor="identifier">E-mail ou username</label><div className="input-wrap"><Icon name="mail" /><input ref={identifierRef} id="identifier" name="identifier" type="text" autoComplete="username" spellCheck={false} placeholder="seu@email.com ou username…" value={identifier} onChange={event => { setIdentifier(event.target.value); clearFieldError('identifier'); }} aria-invalid={Boolean(errors.identifier)} aria-describedby={errors.identifier ? 'identifier-error' : undefined} /></div>{errors.identifier && <p className="field-error" id="identifier-error" role="alert">{errors.identifier}</p>}</div>
+                <div className="field password-field"><label htmlFor="password">Senha</label><div className="input-wrap"><Icon name="lock" /><input ref={passwordRef} id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Digite sua senha…" value={password} onChange={event => { setPassword(event.target.value); clearFieldError('password'); }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'password-error' : undefined} /><button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}><Icon name={showPassword ? 'eyeOff' : 'eye'} /></button></div>{errors.password && <p className="field-error" id="password-error" role="alert">{errors.password}</p>}</div>
+                <div className="recover-row"><a className="text-button" href="/?view=recover">Esqueceu a senha?</a></div>
+                {errors.form && <p className="form-error" role="alert">{errors.form}</p>}
+                <button className="submit-button" type="submit">Entrar</button>
+              </form>
+              <p className="signup-prompt">Ainda não tem conta? <a className="text-button" href="/?view=create">Criar conta</a></p>
+            </div>
+          ) : (
+            <div className="login-content alternate-content">
+              <h1 id="login-title" tabIndex={-1}>{loginView === 'create' ? 'Criar conta' : 'Recuperar senha'}</h1>
+              <p className="login-intro">{loginView === 'create' ? 'Em breve você poderá criar sua conta aqui.' : 'Em breve você poderá solicitar a recuperação da senha aqui.'}</p>
+              <p className="feature-note">Esta opção ainda não está disponível. Por enquanto, use o acesso demonstrativo local para conhecer a tela.</p>
+              <a className="submit-button return-link" href="/">Voltar ao login</a>
+            </div>
+          )}
+          <p className="demo-note"><span />Acesso demonstrativo<span /></p>
+          <p className="demo-help">Use apenas dados fictícios.</p>
+        </section>
+        <PreviewPanels />
+      </div>
+    </main>
+  );
+}

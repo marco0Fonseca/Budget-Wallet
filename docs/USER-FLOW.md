@@ -24,7 +24,7 @@ As quatro áreas ficam acessíveis pela navegação principal, inclusive ao sair
 - Um único campo de texto **E-mail ou username** e um campo **Senha**, com caracteres ocultos.
 - Ao preencher os campos e selecionar Entrar, o usuário acessa o Dashboard conforme as regras de acesso demonstrativo em `BUSINESS-RULES.md`.
 - Exibir indicação discreta de acesso demonstrativo e orientar o uso de dados fictícios.
-- **Criar conta** e **Esqueci minha senha** serão implementados em incremento posterior como modos/formulários da própria página de login. Nesta etapa, não oferecer ações que aparentem funcionar sem implementação.
+- **Criar conta** e **Esqueceu a senha?** abrem estados informativos na própria página, com retorno ao login. O cadastro e a recuperação reais serão implementados em incremento posterior; estes estados não enviam dados nem indicam sucesso.
 - Autenticação real, cadastro e recuperação terão seus contratos e regras refinados em BW-09 e BW-11 antes de uso real.
 
 ## Responsabilidades propostas para as telas
@@ -69,6 +69,8 @@ LOGIN
 ```
 
 “Previsões” é apenas um rótulo curto proposto para a navegação; a tela mantém o propósito de acompanhamento mensal dia a dia. A posição e o estilo da navegação serão ajustados ao layout responsivo.
+
+A versão com painéis distribuídos foi escolhida e aplicada à página de login React; veja [Direção visual do login](LOGIN-DESIGN.md). Os cartões são ilustrativos. O Dashboard de destino permanece vazio nesta etapa.
 
 ## Primeiro percurso funcional
 
