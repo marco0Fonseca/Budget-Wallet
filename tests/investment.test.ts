@@ -6,16 +6,35 @@ import { TransactionType } from '../src/entities/transactions/transactionType.ts
 
 const category = new TransactionCategory(-1, 'Investimentos', TransactionType.INVESTMENT, null, 'user-id');
 const start = Date.parse('2024-01-31T12:00:00.000Z');
-const create = (rate = 0.01, duration = 12) => new Investment(category, start, 10000, rate, duration, 'user-id');
+const create = (rate = 0.01, duration = 12) => new Investment(-1, category, start, 10000, rate, duration, 'user-id');
 
 test('separates the projected total from the projected gain in cents', () => {
   const investment = create();
+  assert.equal(investment.id, -1);
   assert.equal(investment.projectedAmountCents(0), 10000);
   assert.equal(investment.projectedGainCents(0), 0);
   assert.equal(investment.projectedAmountCents(1), 10100);
   assert.equal(investment.projectedGainCents(1), 100);
   assert.equal(investment.projectedAmountCents(2), 10201);
   assert.equal(investment.projectedGainCents(2), 201);
+});
+
+test('preserves persisted IDs and rejects invalid identifiers', () => {
+  for (const id of [1, 2147483647]) {
+    assert.equal(Investment.validateId(id), id);
+    assert.equal(new Investment(id, category, start, 10000, 0.01, 12, 'user-id').id, id);
+  }
+  assert.throws(() => Investment.validateId(-1), /Investment identifier/);
+  for (const value of [0, -2, 1.5, NaN, Infinity, 2147483648, '1', null, true]) {
+    assert.throws(() => new Investment(value as number, category, start, 10000, 0.01, 12, 'user-id'), /Investment identifier/);
+  }
+});
+
+test('omits blank descriptions and rejects non-string descriptions', () => {
+  for (const description of [undefined, '', '   ']) {
+    assert.equal(new Investment(-1, category, start, 10000, 0.01, 12, 'user-id', description).description, undefined);
+  }
+  assert.throws(() => new Investment(-1, category, start, 10000, 0.01, 12, 'user-id', 123 as unknown as string), /Description/);
 });
 
 test('preserves principal at zero interest and supports projected losses', () => {
@@ -40,10 +59,10 @@ test('counts completed months and clamps anniversaries to the last day of the mo
   assert.equal(investment.projectedGainOn(Date.parse('2024-03-30T12:00:00.000Z')), 100);
   assert.equal(investment.projectedGainOn(Date.parse('2024-03-31T12:00:00.000Z')), 201);
 
-  const ordinaryYear = new Investment(category, Date.parse('2025-01-31T00:00:00Z'), 10000, 0.01, 12, 'user-id');
+  const ordinaryYear = new Investment(-1, category, Date.parse('2025-01-31T00:00:00Z'), 10000, 0.01, 12, 'user-id');
   assert.equal(ordinaryYear.projectedGainOn(Date.parse('2025-02-28T00:00:00Z')), 100);
 
-  const leapStart = new Investment(category, Date.parse('2024-02-29T00:00:00Z'), 10000, 0.01, 24, 'user-id');
+  const leapStart = new Investment(-1, category, Date.parse('2024-02-29T00:00:00Z'), 10000, 0.01, 24, 'user-id');
   assert.equal(leapStart.projectedAmountOn(Date.parse('2025-02-28T00:00:00Z')), leapStart.projectedAmountCents(12));
 });
 
@@ -67,32 +86,32 @@ test('rejects invalid rates, durations, principal amounts, and start timestamps'
   for (const rate of [NaN, Infinity, -Infinity, -1, -2]) {
     assert.throws(() => create(rate), /Monthly rate/);
   }
-  for (const duration of [0, -1, 1.5, NaN, Infinity]) {
+  for (const duration of [0, -1, 1.5, NaN, Infinity, 2147483648]) {
     assert.throws(() => create(0.01, duration), /Duration/);
   }
   for (const amount of [0, -1, 1.5, NaN, Infinity, 2_147_483_648]) {
-    assert.throws(() => new Investment(category, start, amount, 0.01, 12,'user-id'), /Amount/);
+    assert.throws(() => new Investment(-1, category, start, amount, 0.01, 12,'user-id'), /Amount/);
   }
   for (const timestamp of [NaN, Infinity, 1.5, 8_640_000_000_000_001]) {
-    assert.throws(() => new Investment(category, timestamp, 10000, 0.01, 12 , 'user-id'), /timestamp/);
+    assert.throws(() => new Investment(-1, category, timestamp, 10000, 0.01, 12 , 'user-id'), /timestamp/);
   }
 });
 
 test('requires an investment category belonging to a valid owner', () => {
   const expense = new TransactionCategory(-1, 'Mercado', TransactionType.EXPENSE, null, 'user-id');
-  assert.throws(() => new Investment(expense, start, 10000, 0.01, 12 , 'user-id'), /investment category/);
-  assert.throws(() => new Investment(category, start, 10000, 0.01, 12,'another-user'), /same user/);
-  assert.throws(() => new Investment(category, start, 10000, 0.01, 12,' '), /identifier/);
+  assert.throws(() => new Investment(-1, expense, start, 10000, 0.01, 12 , 'user-id'), /investment category/);
+  assert.throws(() => new Investment(-1, category, start, 10000, 0.01, 12,'another-user'), /same user/);
+  assert.throws(() => new Investment(-1, category, start, 10000, 0.01, 12,' '), /identifier/);
 });
 
 test('rounds only the final projected amount and rejects unsafe results', () => {
-  const investment = new Investment(category, start, 1, 0.5, 2 , 'user-id');
+  const investment = new Investment(-1, category, start, 1, 0.5, 2 , 'user-id');
   assert.equal(investment.projectedAmountCents(2), 2);
   assert.throws(() => create(Number.MAX_VALUE).projectedAmountCents(2), /supported range/);
 });
 
 test('trims descriptions and protects investment fields from direct changes', () => {
-  const investment = new Investment(category, start, 10000, 0.01, 12 , 'user-id', '  Aporte  ');
+  const investment = new Investment(-1, category, start, 10000, 0.01, 12 , 'user-id', '  Aporte  ');
   assert.equal(investment.description, 'Aporte');
   assert.equal(Reflect.set(investment, 'monthlyRate', NaN), false);
   assert.equal(Reflect.set(investment, 'amountCents', -1), false);
