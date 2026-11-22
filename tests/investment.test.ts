@@ -4,7 +4,7 @@ import { Investment } from '../src/entities/transactions/investment.ts';
 import { TransactionCategory } from '../src/entities/transactions/transactionCategory.ts';
 import { TransactionType } from '../src/entities/transactions/transactionType.ts';
 
-const category = new TransactionCategory('Investimentos', TransactionType.INVESTMENT, null, 'user-id');
+const category = new TransactionCategory(-1, 'Investimentos', TransactionType.INVESTMENT, null, 'user-id');
 const start = Date.parse('2024-01-31T12:00:00.000Z');
 const create = (rate = 0.01, duration = 12) => new Investment(category, start, 10000, rate, duration, 'user-id');
 
@@ -79,7 +79,7 @@ test('rejects invalid rates, durations, principal amounts, and start timestamps'
 });
 
 test('requires an investment category belonging to a valid owner', () => {
-  const expense = new TransactionCategory('Mercado', TransactionType.EXPENSE, null, 'user-id');
+  const expense = new TransactionCategory(-1, 'Mercado', TransactionType.EXPENSE, null, 'user-id');
   assert.throws(() => new Investment(expense, start, 10000, 0.01, 12 , 'user-id'), /investment category/);
   assert.throws(() => new Investment(category, start, 10000, 0.01, 12,'another-user'), /same user/);
   assert.throws(() => new Investment(category, start, 10000, 0.01, 12,' '), /identifier/);

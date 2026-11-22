@@ -30,9 +30,13 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 ## Lançamentos, valores e datas
 
+- Novos lançamentos usam `id = -1` apenas em memória. `TransactionRepository.create` exige esse estado e uma categoria já persistida, omite o ID na inserção e retorna a entidade com o ID gerado pelo banco. IDs de consultas/alterações são inteiros positivos de até 2.147.483.647.
+- As consultas e alterações do repositório recebem `userId`. As listagens retornam arrays ordenados por ID; `findAllByCategory` inclui apenas a categoria informada, sem agregar subcategorias. `updateCategory` exige uma categoria do mesmo usuário; o tipo do lançamento acompanha a nova categoria.
+- `updateDescription` remove espaços externos; texto vazio ou `undefined` limpa a descrição no banco. `updateAmountCents` valida centavos antes da gravação.
+
 - Cada lançamento tem valor positivo em centavos, data e categoria do mesmo proprietário. Descrição é opcional; o tipo vem da categoria.
 - `Transaction.amountCents` é um campo `readonly` expresso em inteiros de 1 a 2.147.483.647 centavos, sem arredondamento automático. A conversão da entrada em reais deve ocorrer antes de construir a entidade. `monetaryValue()` retorna uma string com ponto e duas casas decimais (1550 → "15.50"), apenas para apresentação; cálculos usam centavos. Não há getter/setter `value`. Totais agregados precisam de validação própria de limite.
-- A classe usa provisoriamente `dateTimestamp` em milissegundos, com validação básica de data válida. A descrição opcional fica no final do construtor, tem espaços externos removidos e, se vazia, é omitida.
+- A classe usa provisoriamente `dateTimestamp` em milissegundos inteiros seguros, com validação de data válida. A persistência converte o timestamp para `BigInt` e o reconstrói como `number`. A descrição opcional fica no final do construtor, tem espaços externos removidos e, se vazia, é omitida.
 - Por decisão do usuário, a proibição de datas futuras foi suspensa nesta versão. Isso não significa que uma ocorrência futura já tenha sido paga ou recebida; a distinção entre previsto e realizado será refinada em BW-17 antes de automatizar recorrências.
 - A convenção inicial de fuso para apresentação é `America/Sao_Paulo`; a representação definitiva da data financeira e sua aplicação às recorrências serão revisadas em BW-17.
 - Resultado mensal = receitas realizadas menos despesas realizadas no mês. O período inclui o primeiro dia e exclui o primeiro dia do mês seguinte; os totais independem da paginação.

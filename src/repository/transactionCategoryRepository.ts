@@ -4,22 +4,6 @@ import { TransactionType } from '../entities/transactions/transactionType.ts';
 import { prisma } from '../repository/repository.ts';
 
 export class TransactionCategoryRepository {
-
-    async delete(id: number, userId: string): Promise<TransactionCategory> {
-        TransactionCategory.validateId(id);
-        TransactionCategory.validateUserId(userId);
-
-        const categoryData = await prisma.transactionCategory.delete({
-            where: {
-                id_userId: { id, userId },
-                isDefault: false,
-                children: { none: {} },
-            },
-        });
-
-        return this.toEntity(categoryData);
-    }
-
     private toEntity(category: PrismaTransactionCategory): TransactionCategory {
         return new TransactionCategory(
             category.id,
@@ -98,6 +82,24 @@ export class TransactionCategoryRepository {
         return [parent, ...children].map(category => this.toEntity(category));
     }
 
+    async findAllByUserId(userId: string): Promise<TransactionCategory[]> {
+        TransactionCategory.validateUserId(userId);
+        const categories = await prisma.transactionCategory.findMany({
+            where: { userId },
+            orderBy: { id: 'asc' },
+        });
+        return categories.map(category => this.toEntity(category));
+    }
+
+    async findAllDefaultByUserId(userId: string): Promise<TransactionCategory[]> {
+        TransactionCategory.validateUserId(userId);
+        const categories = await prisma.transactionCategory.findMany({
+            where: { userId, isDefault: true },
+            orderBy: { id: 'asc' },
+        });
+        return categories.map(category => this.toEntity(category));
+    }
+
     async updateLabel(id: number, userId: string, newLabel: string) : Promise<TransactionCategory> {
         TransactionCategory.validateId(id);
         const validatedLabel = TransactionCategory.validateLabel(newLabel);
@@ -110,44 +112,6 @@ export class TransactionCategoryRepository {
         });
 
         return this.toEntity(categoryData);
-    }
-
-    async updateParent(id: number, userId: string, newParentId: number | null): Promise<TransactionCategory> {
-        TransactionCategory.validateId(id);
-        TransactionCategory.validateUserId(userId);
-        TransactionCategory.validateParentId(newParentId);
-        if (newParentId === id) {
-            throw new Error('A category cannot be its own parent.');
-        }
-
-        // A hierarquia consultada deve permanecer válida até a gravação.
-        return prisma.$transaction(async (tx) => {
-            const category = await tx.transactionCategory.findUniqueOrThrow({
-                where: { id_userId: { id, userId }, isDefault: false },
-            });
-
-            if (newParentId !== null) {
-                const parent = await tx.transactionCategory.findUniqueOrThrow({
-                    where: { id_userId: { id: newParentId, userId } },
-                });
-                if (parent.parentId !== null) {
-                    throw new Error('Subcategories must belong to a root category.');
-                }
-                if (parent.type !== category.type) {
-                    throw new Error('Subcategory type must match its parent.');
-                }
-                const childrenCount = await tx.transactionCategory.count({ where: { userId, parentId: id } });
-                if (childrenCount > 0) {
-                    throw new Error('Categories with children cannot become subcategories.');
-                }
-            }
-
-            const updated = await tx.transactionCategory.update({
-                where: { id_userId: { id, userId }, isDefault: false },
-                data: { parentId: newParentId },
-            });
-            return this.toEntity(updated);
-        });
     }
 
     async updateType(id: number, userId: string, newType: TransactionType): Promise<TransactionCategory> {
@@ -192,5 +156,58 @@ export class TransactionCategoryRepository {
 
             return this.toEntity(updated);
         });
+    }
+
+    async updateParent(id: number, userId: string, newParentId: number | null): Promise<TransactionCategory> {
+        TransactionCategory.validateId(id);
+        TransactionCategory.validateUserId(userId);
+        TransactionCategory.validateParentId(newParentId);
+        if (newParentId === id) {
+            throw new Error('A category cannot be its own parent.');
+        }
+
+        // A hierarquia consultada deve permanecer válida até a gravação.
+        return prisma.$transaction(async (tx) => {
+            const category = await tx.transactionCategory.findUniqueOrThrow({
+                where: { id_userId: { id, userId }, isDefault: false },
+            });
+
+            if (newParentId !== null) {
+                const parent = await tx.transactionCategory.findUniqueOrThrow({
+                    where: { id_userId: { id: newParentId, userId } },
+                });
+                if (parent.parentId !== null) {
+                    throw new Error('Subcategories must belong to a root category.');
+                }
+                if (parent.type !== category.type) {
+                    throw new Error('Subcategory type must match its parent.');
+                }
+                const childrenCount = await tx.transactionCategory.count({ where: { userId, parentId: id } });
+                if (childrenCount > 0) {
+                    throw new Error('Categories with children cannot become subcategories.');
+                }
+            }
+
+            const updated = await tx.transactionCategory.update({
+                where: { id_userId: { id, userId }, isDefault: false },
+                data: { parentId: newParentId },
+            });
+            return this.toEntity(updated);
+        });
+    }
+
+    async delete(id: number, userId: string): Promise<TransactionCategory> {
+        TransactionCategory.validateId(id);
+        TransactionCategory.validateUserId(userId);
+
+        const categoryData = await prisma.transactionCategory.delete({
+            where: {
+                id_userId: { id, userId },
+                isDefault: false,
+                children: { none: {} },
+            },
+        });
+
+        return this.toEntity(categoryData);
     }
 }

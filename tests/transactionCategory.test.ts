@@ -4,7 +4,7 @@ import { TransactionCategory } from '../src/entities/transactions/transactionCat
 import { TransactionType } from '../src/entities/transactions/transactionType.ts';
 
 test('creates a category with a trimmed label and the provided owner and parent', () => {
-  const category = new TransactionCategory('  Mercado  ', TransactionType.EXPENSE, 1, 'user-id');
+  const category = new TransactionCategory(-1, '  Mercado  ', TransactionType.EXPENSE, 1, 'user-id');
 
   assert.equal(category.label, 'Mercado');
   assert.equal(category.type, TransactionType.EXPENSE);
@@ -18,7 +18,7 @@ test('accepts persisted IDs and reserves -1 for new categories', () => {
   for (const id of [1, 42, 2147483647]) {
     assert.equal(TransactionCategory.validateId(id), id);
     assert.equal(TransactionCategory.validateParentId(id), id);
-    const category = new TransactionCategory('Category', TransactionType.EXPENSE, null, 'user-id', false, id);
+    const category = new TransactionCategory(id, 'Category', TransactionType.EXPENSE, null, 'user-id', false);
     assert.equal(category.id, id);
   }
   assert.equal(TransactionCategory.validateParentId(null), null);
@@ -32,21 +32,21 @@ test('rejects invalid numeric IDs without coercing strings or other types', () =
     const id = value as number;
     assert.throws(() => TransactionCategory.validateId(id), /identifier is invalid/);
     if (value !== undefined) {
-      assert.throws(() => new TransactionCategory('Category', TransactionType.EXPENSE, null, 'user-id', false, id), /identifier is invalid/);
+      assert.throws(() => new TransactionCategory(id, 'Category', TransactionType.EXPENSE, null, 'user-id', false), /identifier is invalid/);
     }
     if (value !== null) {
-      assert.throws(() => new TransactionCategory('Category', TransactionType.EXPENSE, id, 'user-id'), /identifier is invalid/);
+      assert.throws(() => new TransactionCategory(-1, 'Category', TransactionType.EXPENSE, id, 'user-id'), /identifier is invalid/);
     }
   }
 });
 
 test('preserves the default category flag and rejects non-boolean flags', () => {
-  const category = new TransactionCategory('Mercado', TransactionType.EXPENSE, null, 'user-id', true);
+  const category = new TransactionCategory(-1, 'Mercado', TransactionType.EXPENSE, null, 'user-id', true);
   assert.equal(category.isDefault, true);
 
   for (const flag of ['true', 1, null]) {
     assert.throws(
-      () => new TransactionCategory('Mercado', TransactionType.EXPENSE, null, 'user-id', flag as unknown as boolean),
+      () => new TransactionCategory(-1, 'Mercado', TransactionType.EXPENSE, null, 'user-id', flag as unknown as boolean),
       /Default category flag must be a boolean/,
     );
   }
@@ -54,7 +54,7 @@ test('preserves the default category flag and rejects non-boolean flags', () => 
 
 test('accepts each defined transaction type and categories without a parent', () => {
   for (const type of Object.values(TransactionType)) {
-    const category = new TransactionCategory('Category', type, null, 'user-id');
+    const category = new TransactionCategory(-1, 'Category', type, null, 'user-id');
 
     assert.equal(category.type, type);
     assert.equal(category.parentId, null);
@@ -64,7 +64,7 @@ test('accepts each defined transaction type and categories without a parent', ()
 test('rejects empty, whitespace-only, or non-string labels', () => {
   for (const label of ['', '   ', null, undefined, 123]) {
     assert.throws(
-      () => new TransactionCategory(label as string, TransactionType.EXPENSE, null, 'user-id'),
+      () => new TransactionCategory(-1, label as string, TransactionType.EXPENSE, null, 'user-id'),
       { message: 'Category label is required.' },
     );
   }
@@ -73,7 +73,7 @@ test('rejects empty, whitespace-only, or non-string labels', () => {
 test('rejects missing, non-string, or untrimmed user identifiers', () => {
   for (const userId of ['', '   ', ' user-id ', null, undefined, 123]) {
     assert.throws(
-      () => new TransactionCategory('Mercado', TransactionType.EXPENSE, null, userId as string),
+      () => new TransactionCategory(-1, 'Mercado', TransactionType.EXPENSE, null, userId as string),
       { message: 'User identifier is invalid.' },
     );
   }
@@ -82,7 +82,7 @@ test('rejects missing, non-string, or untrimmed user identifiers', () => {
 test('rejects values outside the defined transaction types', () => {
   for (const type of ['', 'expense', 'UNKNOWN', null, undefined, 123]) {
     assert.throws(
-      () => new TransactionCategory('Mercado', type as TransactionType, null, 'user-id'),
+      () => new TransactionCategory(-1, 'Mercado', type as TransactionType, null, 'user-id'),
       { message: 'Transaction type is invalid.' },
     );
   }

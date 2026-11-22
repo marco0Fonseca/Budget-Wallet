@@ -71,6 +71,25 @@ after(async () => {
     }
 });
 
+test('lists only the users default categories including default subcategories', async (t) => {
+    const { user } = await createTestUser(t, 'defaults.owner');
+    const { user: other } = await createTestUser(t, 'defaults.other');
+    assert.deepStrictEqual(await categories.findAllDefaultByUserId(user.id), []);
+
+    const parent = await categories.create(new TransactionCategory(-1, 'Default root', TransactionType.EXPENSE, null, user.id, true));
+    await categories.create(new TransactionCategory(-1, 'Custom', TransactionType.EXPENSE, null, user.id));
+    const child = await categories.create(new TransactionCategory(-1, 'Default child', TransactionType.EXPENSE, parent.id, user.id, true));
+    await categories.create(new TransactionCategory(-1, 'Custom child', TransactionType.EXPENSE, parent.id, user.id));
+    const foreign = await categories.create(new TransactionCategory(-1, 'Other default', TransactionType.EXPENSE, null, other.id, true));
+
+    assert.deepStrictEqual(await categories.findAllDefaultByUserId(user.id), [parent, child]);
+    assert.deepStrictEqual(await categories.findAllDefaultByUserId(other.id), [foreign]);
+    assert.deepStrictEqual(await categories.findAllDefaultByUserId('missing-user'), []);
+    for (const userId of ['', ' owner ']) {
+        await assert.rejects(() => categories.findAllDefaultByUserId(userId), /User identifier is invalid/);
+    }
+});
+
 test('updates root and children together without changing another users categories', async (t) => {
     assert.ok(prisma);
     const { user } = await createTestUser(t, 'type.owner');
