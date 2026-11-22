@@ -34,6 +34,7 @@ model TransactionCategory {
   type     TransactionType
   parentId Int?
   userId   String
+  isDefault Boolean @default(false)
 
   user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   parent   TransactionCategory?  @relation("CategoryHierarchy", fields: [parentId, userId, type], references: [id, userId, type], onDelete: NoAction, onUpdate: Restrict)
@@ -42,7 +43,6 @@ model TransactionCategory {
   transactions Transaction[]
   investments  Investment[]
 
-  // Chaves compostas permitem validar proprietário e tipo nas relações.
   @@unique([id, userId])
   @@unique([id, userId, type])
   @@index([userId, type])

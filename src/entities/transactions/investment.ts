@@ -1,5 +1,5 @@
-﻿import { TransactionCategory } from './transactions/transactionCategory.ts';
-import { TransactionType } from './transactions/transactionType.ts';
+﻿import { TransactionCategory } from '../transactions/transactionCategory.ts';
+import { TransactionType } from '../transactions/transactionType.ts';
 
 export class Investment {
   public readonly id: number = -1;

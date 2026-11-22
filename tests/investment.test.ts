@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Investment } from '../src/entities/investment.ts';
+import { Investment } from '../src/entities/transactions/investment.ts';
 import { TransactionCategory } from '../src/entities/transactions/transactionCategory.ts';
 import { TransactionType } from '../src/entities/transactions/transactionType.ts';
 

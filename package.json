@@ -23,7 +23,8 @@
   },
   "allowScripts": {
     "prisma@7.10.1": true,
-    "@prisma/engines@7.10.1": true
+    "@prisma/engines@7.10.1": true,
+    "better-sqlite3@12.11.1": true
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",

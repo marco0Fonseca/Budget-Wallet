@@ -12,6 +12,7 @@ export class UserRepository {
             Number(userData.createdAtTimestamp),
         );
     }
+    
     async create(user : User, passwordHash : string) : Promise<User>{
 
     await prisma.user.create({
@@ -81,41 +82,41 @@ export class UserRepository {
         return this.toEntity(userData);
     }
 
-  async updateEmail(id: string, newEmail: string) : Promise<User> {
-    const validatedEmail = User.validateEmail(newEmail);
+    async updateEmail(id: string, newEmail: string) : Promise<User> {
+      const validatedEmail = User.validateEmail(newEmail);
 
-    const userData = await prisma.user.update({
-      where: { id : id },
-      data: { email: validatedEmail }
-    });
+      const userData = await prisma.user.update({
+        where: { id : id },
+        data: { email: validatedEmail }
+      });
 
-    return this.toEntity(userData);
-  }
+      return this.toEntity(userData);
+    }
 
-  async updateUsername(id: string, newUsername: string): Promise<User> {
-    const validatedUsername = User.validateUsername(newUsername);
+    async updateUsername(id: string, newUsername: string): Promise<User> {
+      const validatedUsername = User.validateUsername(newUsername);
 
-    const userData = await prisma.user.update({
-      where: { id },
-      data: { username: validatedUsername },
-    });
+      const userData = await prisma.user.update({
+        where: { id },
+        data: { username: validatedUsername },
+      });
 
-    return this.toEntity(userData);
-  }
+      return this.toEntity(userData);
+    }
 
-  async updatePasswordHash(id: string, newPasswordHash: string) : Promise<User> {
-    const userData = await prisma.user.update({
-      where: { id : id },
-      data: { passwordHash: newPasswordHash }
-    });
+    async updatePasswordHash(id: string, newPasswordHash: string) : Promise<User> {
+      const userData = await prisma.user.update({
+        where: { id : id },
+        data: { passwordHash: newPasswordHash }
+      });
 
-    return this.toEntity(userData);
-  }
+      return this.toEntity(userData);
+    }
 
-  async delete(id : string): Promise<User> {
-    const userData = await prisma.user.delete({
-      where: { id }
-    });
-    return this.toEntity(userData);
-  }
+    async delete(id : string): Promise<User> {
+      const userData = await prisma.user.delete({
+        where: { id }
+      });
+      return this.toEntity(userData);
+    }
 }

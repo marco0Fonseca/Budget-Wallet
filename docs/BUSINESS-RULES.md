@@ -5,7 +5,7 @@ Documento evolutivo das regras, validações, cálculos e restrições do domín
 ## Definições confirmadas
 
 - Moeda BRL, exibição com R$ e precisão de centavos.
-- Categorias editáveis e criadas pelo usuário, incluindo categorias genéricas e subcategorias específicas.
+- Categorias criadas pelo usuário são editáveis. Categorias padrão são individuais por usuário, mas não podem ser editadas nem excluídas isoladamente.
 - Calendário mensal com despesas fixas previstas, valor que o usuário pretende guardar e orçamento diário baseado na receita.
 - O usuário pode alterar o orçamento diário. Sobras ou excessos devem poder ser distribuídos pelos dias restantes do mês.
 
@@ -42,9 +42,17 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 ## Categorias
 
+O método updateParent aceita null para transformar uma subcategoria em raiz ou o ID de uma raiz do mesmo proprietário e tipo para movê-la. Categorias padrão não podem ser movidas. Uma categoria com filhas não pode virar subcategoria; autorreferência também é proibida. A alteração preserva ID, tipo e movimentações vinculadas: muda apenas o agrupamento. A validação da hierarquia e a gravação ocorrem na mesma transação.
+
+Uma categoria nova tem `id = -1` apenas em memória. O repositório aceita esse estado no `create`, omite o ID na inserção e retorna outra entidade com o ID autoincremental gerado pelo banco. A entidade original mantém `-1`; categorias já persistidas não podem ser reenviadas ao `create`. IDs persistidos e usados em consultas/atualizações devem ser números inteiros de 1 a 2.147.483.647, compatíveis com `Int` do Prisma. `parentId` aceita `null` ou um ID positivo válido, nunca `-1`. A sequência é gerada pelo banco e pode apresentar lacunas.
+
 Usar uma única entidade `Category`, com `parentId` opcional apontando para outra categoria. Uma subcategoria é uma categoria com pai; não precisa de uma classe ou tabela separada. BW-03 implementará a classe de domínio `Category` e seu mapeamento Prisma, mantendo as regras coerentes entre domínio e persistência.
 
-Sugestão inicial de categorias, copiadas para cada usuário e editáveis:
+Sugestão inicial de categorias, copiadas para cada usuário e marcadas com `isDefault: true`:
+
+O campo `isDefault` é `false` para categorias personalizadas. Edição e exclusão devem bloquear categorias padrão, inclusive alterações de nome, tipo, pai e do próprio indicador. Esse indicador é definido pelo servidor, não por dados livres enviados pelo cliente. A exclusão da conta continua removendo todas as categorias em cascata. `updateLabel`, `updateType`, `updateParent` e `delete` já verificam a proteção. A exclusão isolada exige categoria do próprio usuário, não padrão e sem subcategorias; vínculos com transações ou investimentos também impedem a exclusão pelo banco. A criação automática das categorias padrão ainda está pendente.
+
+A alteração de tipo só pode partir de uma categoria raiz e deve atualizar também suas subcategorias diretas em uma única transação. É bloqueada se qualquer categoria envolvida for padrão ou tiver transações ou investimentos vinculados. A criação pelo repositório só aceita pai existente, do mesmo usuário e tipo, cujo parentId seja nulo. Assim, o limite de dois níveis é validado na entrada, e updateType trata apenas a raiz e suas filhas diretas. Escritas diretas no banco não recebem essa validação de profundidade. Para respeitar a chave estrangeira composta com `onUpdate: Restrict`, o repositório desvincula temporariamente as filhas, altera os tipos e restaura os vínculos dentro da mesma transação; qualquer falha desfaz todas as etapas.
 
 | Tipo | Categoria | Subcategorias sugeridas |
 | --- | --- | --- |
