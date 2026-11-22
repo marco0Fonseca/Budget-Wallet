@@ -50,3 +50,5 @@ Thumbs.db
 Desktop.ini
 
 # Versionar package.json, package-lock.json, schema Prisma e migrations.
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

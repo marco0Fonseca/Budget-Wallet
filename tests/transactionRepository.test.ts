@@ -140,6 +140,20 @@ test('persists updates and deletes only the selected transaction', async (t) => 
     assert.deepStrictEqual(await categories.findCategoryById(a.secondCategory.id, a.user.id), a.secondCategory);
 });
 
+test('rejects investment categories when changing a transaction category', async (t) => {
+    const { user, transaction } = await fixture(t, 'investment.category');
+    assert.ok(prisma);
+    const investmentCategory = await categories.create(
+        new TransactionCategory(-1, 'CDI', TransactionType.INVESTMENT, null, user.id),
+    );
+
+    await assert.rejects(
+        () => transactions.updateCategory(transaction.id, user.id, investmentCategory.id),
+        /income or expense/,
+    );
+    assert.deepStrictEqual(await transactions.findById(transaction.id, user.id), transaction);
+});
+
 test('rejects invalid updates, missing records and cross-user operations without changing records', async (t) => {
     assert.ok(prisma);
     const a = await fixture(t, 'reject.a');
@@ -152,7 +166,7 @@ test('rejects invalid updates, missing records and cross-user operations without
         await assert.rejects(() => transactions.delete(id, userId), { code: 'P2025' });
     }
     for (const categoryId of [b.category.id, 2147483647]) {
-        await assert.rejects(() => transactions.updateCategory(a.transaction.id, a.user.id, categoryId), { code: 'P2003' });
+        await assert.rejects(() => transactions.updateCategory(a.transaction.id, a.user.id, categoryId), { code: 'P2025' });
         const forgedCategory = new TransactionCategory(categoryId, 'Forged', TransactionType.EXPENSE, null, a.user.id);
         await assert.rejects(() => transactions.create(new Transaction(-1, forgedCategory, 100, 1795000000123, a.user.id)), { code: 'P2003' });
     }

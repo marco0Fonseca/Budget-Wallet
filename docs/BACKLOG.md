@@ -1,6 +1,6 @@
 # Backlog inicial — BudgetWallet
 
-Este backlog é evolutivo. A configuração local de TypeScript, Prisma e testes está disponível; o próximo passo é desenvolver as primeiras classes e sua persistência, antes de integrar a aplicação web. Vamos detalhar apenas o necessário para entregar e validar o primeiro fluxo; as próximas funcionalidades serão refinadas conforme aprendermos com o uso.
+Este backlog é evolutivo. A configuração local e as primeiras entidades e persistência foram concluídas em BW-03 para a versão inicial. Vamos detalhar apenas o necessário para entregar e validar o primeiro fluxo; as próximas funcionalidades serão refinadas conforme aprendermos com o uso.
 
 ## Objetivo da primeira entrega
 
@@ -29,7 +29,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. Por decisão do usuário, a sequência passa a ser ambiente local → classes, ORM e testes → aplicação web e automação de qualidade. BW-15 e BW-16 recebem o trabalho adiado de BW-02. BW-10 cobre o acesso demonstrativo inicial; BW-09 e BW-11 cobrem o acesso real posterior. Os IDs existentes foram preservados.
+BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais itens seguem os estados indicados em suas seções. Por decisão do usuário, a sequência passa a ser ambiente local → classes, ORM e testes → aplicação web e automação de qualidade. BW-15 e BW-16 recebem o trabalho adiado de BW-02. BW-10 cobre o acesso demonstrativo inicial; BW-09 e BW-11 cobrem o acesso real posterior. Os IDs existentes foram preservados.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
@@ -93,13 +93,15 @@ BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. 
 
 ### BW-03 — Criar classes iniciais, mapeamento ORM e testes
 
-**Estado:** Em andamento. Classes iniciais, schema Prisma e primeira migration criados; migration aplicada ao SQLite local e validada por testes SQL em memória. Integração do Prisma Client, repositórios/conversões, reconstrução com IDs numéricos persistidos e seed ainda pendentes. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md).
+**Estado:** Concluído para a versão inicial. Revisão independente por subagente concluída em 22/11/2026; o usuário dispensou a conferência em clone limpo e a revisão por outro integrante ativo devido ao prazo. `npm run check` passou nesta revisão. Entidades `User`, `TransactionCategory`, `Transaction`, `Investment`, schema Prisma, Prisma Client local, quatro migrations e repositórios estão implementados. O catálogo aprovado contém 21 categorias raiz, incluindo opções de investimento; `createDefaultCategoriesForUser` cria a cópia individual de forma repetível. A integração da rotina ao cadastro real ficará em BW-11. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md) e [0002-user-deletion.md](decisions/0002-user-deletion.md).
 
 **Objetivo:** construir um primeiro modelo executável do domínio, coerente com o ORM e verificável sem frontend ou servidor HTTP.
 
-**Trabalho:** criar as classes iniciais `User`, `Category` e `Transaction`, com os campos e comportamentos mínimos do primeiro caso de uso; mapear sua persistência com Prisma/SQLite; adicionar testes unitários e de integração. Começar por um caminho pequeno de criação e leitura, sem construir todos os serviços ou operações futuras.
+**Trabalho entregue até aqui:** entidades de usuário, categoria, movimentação e investimento; schema e migrations; configuração e geração local do Prisma Client; repositórios e conversões; testes das entidades, schema e operações de persistência. Os repositórios são uma base de domínio e persistência, sem constituir ainda API HTTP ou fluxo completo da aplicação.
 
-**Limite com BW-02:** instalação do Prisma/TypeScript e configuração do executor de testes já estão concluídas e não serão refeitas. BW-03 configura Prisma Client, conexão e geração necessárias ao schema, além do banco e dos testes de domínio. Os testes complementam `tooling.test.ts`, usando o executor existente.
+**Continuidade em BW-11:** integrar a chamada a `createDefaultCategoriesForUser` ao fluxo de criação de usuário quando o cadastro real for implementado no servidor. BW-03 entrega o catálogo e a rotina reutilizável por usuário.
+
+**Limite com BW-02:** instalação do Prisma/TypeScript e configuração do executor de testes foram concluídas em BW-02. BW-03 já configurou Prisma Client, conexão, geração, banco, migrations e testes de domínio e persistência. Os testes complementam `tooling.test.ts`, usando o executor existente.
 
 **Critérios de aceite:**
 
@@ -107,18 +109,19 @@ BW-01 e BW-02 estão **Concluídos**; os demais itens permanecem **A refinar**. 
 - O schema Prisma corresponde aos campos, tipos, opcionalidade e relações dessas classes. Conversões entre domínio e persistência são explícitas onde necessárias, especialmente dinheiro e datas.
 - Valores são inteiros positivos em centavos, com limite documentado; o timestamp informado é preservado ao salvar e carregar. A restrição de datas futuras e as convenções de recorrência foram adiadas para BW-17.
 - Categoria e subcategoria respeitam os dois níveis definidos, proprietário e tipo; um lançamento só aceita categoria do mesmo usuário e tipo.
-- A primeira migration cria um banco vazio. O seed usa dados fictícios e categorias iniciais, podendo ser repetido sem duplicação.
-- Há exemplo de configuração sem segredos e instruções/comandos para gerar o cliente, criar o banco e executar o seed. Bancos locais continuam ignorados pelo Git.
-- Testes unitários verificam regras das classes; testes de integração em SQLite isolado verificam criação/leitura, conversão classe ↔ persistência e vínculos inválidos. Não usar o banco pessoal do desenvolvedor.
-- `npm run check` inclui os novos testes. Uma decisão curta registra dinheiro, datas, mapeamento e exclusão de registros relacionados.
+- [x] A migration inicial cria as entidades; migrations seguintes adicionam hash de senha, exclusão em cascata de usuário e indicador de categoria padrão, sem reescrever migrations anteriores.
+- [x] O catálogo aprovado define 21 categorias raiz de receitas, despesas e investimentos; `createDefaultCategoriesForUser` cria e reutiliza a cópia por usuário sem duplicação.
+- [x] Há exemplo de configuração sem segredos e comandos de validação, aplicação e consulta do estado das migrations. A verificação em clone limpo foi dispensada pelo usuário por prazo e não foi executada. Bancos locais são ignorados pelo Git.
+- [x] Testes unitários verificam regras das entidades; testes de integração em SQLite temporário verificam conversões classe ↔ persistência, operações dos repositórios, isolamento por usuário e vínculos inválidos. Não usam o banco local de desenvolvimento.
+- [x] `npm run check` está configurado para executar verificação de tipos e testes. Decisões sobre dinheiro, datas, mapeamento e exclusão estão em ADRs.
 
-**Fora deste item:** React, rotas HTTP, autenticação real, telas de gestão de categorias, CRUD completo, calendário, investimentos, lint e CI. As classes e o schema evoluirão junto com essas entregas. Reutilizar as validações de BW-03 nos fluxos de BW-04/BW-12, sem reimplementá-las em cada tela ou rota.
+**Fora deste item:** React, rotas HTTP, autenticação real, telas de gestão de categorias, calendário, lint e CI. As entidades e repositórios implementados não substituem os fluxos de aplicação de BW-04/BW-12. Reutilizar as validações de BW-03 no servidor, sem duplicá-las na interface.
 
 ### BW-04 — Registrar e listar movimentações de ponta a ponta
 
 **História:** como usuário, quero registrar e consultar receitas e despesas para acompanhar minhas movimentações.
 
-**Trabalho:** implementar contrato HTTP mínimo, validação no servidor, formulário React e listagem. Usar categorias e subcategorias do seed nesta entrega; a edição e criação pelo usuário entram em BW-12.
+**Trabalho:** implementar contrato HTTP mínimo, validação no servidor, formulário React e listagem. Usar as categorias raiz do catálogo padrão nesta entrega; a edição e criação de categorias pelo usuário entram em BW-12.
 
 **Critérios de aceite:**
 
@@ -215,6 +218,7 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 
 - “Criar conta” e “Esqueci minha senha” abrem seus respectivos formulários na própria página, com opção de voltar ao login.
 - O cadastro permite definir e-mail, username e senha; unicidade e normalização de identificadores são especificadas e validadas no servidor.
+- Ao criar a conta, o servidor cria as categorias padrão individuais chamando `TransactionCategoryRepository.createDefaultCategoriesForUser`.
 - A recuperação usa o e-mail da conta e um mecanismo de redefinição com validade limitada e uso único; não revela se uma conta existe nem expõe a senha anterior.
 - Regras de senha, verificação de e-mail, envio de mensagens e armazenamento seguro de credenciais são definidas no refinamento, com testes dos fluxos de sucesso e falha.
 
@@ -300,15 +304,16 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 
 **Critérios de aceite a detalhar no refinamento:** regras aprovadas em `BUSINESS-RULES.md`, modelo correspondente e testes de frequências, viradas de mês/ano, ano bissexto e geração sem duplicação. Integrar ao calendário de BW-13 quando ambos estiverem disponíveis. A validação básica de um timestamp válido permanece; o adiamento trata das regras temporais do negócio.
 
-## Modelo de dados inicial proposto
+## Modelo persistido até aqui
 
-Este é um ponto de partida para BW-03, não um schema definitivo. A autenticação pode alterar a estrutura de `User`; não há necessidade de definir armazenamento de senhas nesta etapa.
+O schema de referência está em `prisma/schema.prisma`; esta tabela resume o que já foi implementado, sem antecipar o modelo final do produto. Regras de categorias e valores estão em [Regras de negócio](BUSINESS-RULES.md), e as decisões de persistência estão nos [ADRs](decisions/0001-initial-persistence.md).
 
-| Entidade | Campos iniciais | Responsabilidade |
+| Entidade | Campos persistidos | Responsabilidade |
 | --- | --- | --- |
-| `User` | `id`, `name`, `email`, `username`, `createdAt` | Identificar o proprietário e seu perfil; classe inicial implementada, mapeamento e unicidade ainda pendentes. Autenticação será refinada em BW-09. |
-| `Category` | `id`, `userId`, `parentId?`, `name`, `type`, `archivedAt?`, `createdAt` | Classificar lançamentos; vínculo opcional com categoria pai do mesmo usuário e tipo. |
-| `Transaction` | `id`, `userId`, `categoryId`, `type`, `amountCents`, `dateTimestamp`, `description?` | Proposta alinhada aos campos atuais; mapeamento ORM ainda pendente. Datas e recorrências serão refinadas em BW-17. |
+| `User` | `id`, `name`, `email`, `username`, `passwordHash`, `createdAtTimestamp` | Proprietário dos dados. Autenticação real permanece em BW-09. |
+| `TransactionCategory` | `id`, `label`, `type`, `parentId?`, `userId`, `isDefault` | Categorias próprias do usuário, com hierarquia de raiz e subcategoria direta; sinaliza categorias padrão protegidas pelas regras do domínio. |
+| `Transaction` | `id`, `categoryId`, `amountCents`, `dateTimestamp`, `userId`, `description?` | Receita ou despesa associada a categoria e proprietário; o tipo é obtido da categoria. Datas e recorrências serão refinadas em BW-17. |
+| `Investment` | `id`, `categoryId`, `dateTimestamp`, `amountCents`, `monthlyRate`, `monthsDuration`, `userId`, `description?` | Persistência inicial de investimento; interface e fluxo completo continuam fora de BW-03. |
 
 ```mermaid
 erDiagram
@@ -318,13 +323,13 @@ erDiagram
     CATEGORY ||--o{ TRANSACTION : classifica
 ```
 
-Regras propostas:
+Restrições centrais já representadas no schema ou nas entidades/repositórios:
 
-- `type` aceita `INCOME` ou `EXPENSE`; o valor é sempre positivo e o tipo determina como ele entra no resultado.
+- Categorias aceitam `INCOME`, `EXPENSE` ou `INVESTMENT`; `Transaction` usa somente `INCOME`/`EXPENSE`, enquanto `Investment` exige categoria `INVESTMENT`. O valor monetário é sempre positivo.
 - A classe usa provisoriamente `dateTimestamp` em milissegundos. BW-03 deve preservar seu valor no banco; a representação definitiva da data financeira e o tratamento de datas futuras serão refinados em BW-17.
 - `createdAt` e `updatedAt` representam instantes de auditoria técnica, distintos da data financeira.
 - Categoria é obrigatória; sugestões iniciais e hierarquia estão em `BUSINESS-RULES.md`.
-- Nomes normalizados são únicos por usuário, tipo e pai (incluindo categorias raiz). Validar também ciclos e a hierarquia permitida.
+- Categorias, transações e investimentos são associados ao mesmo proprietário por relações compostas; categoria filha deve ser direta e compatível com o tipo da categoria raiz.
 - A combinação proprietário/categoria e a compatibilidade de tipos precisam ser validadas no servidor; uma chave estrangeira de categoria, sozinha, não garante essas regras.
 - Categorias em uso não podem ser excluídas sem reclassificação dos lançamentos. Não implementar exclusão de usuários nesta etapa.
 - Considerar índice composto por `userId` e o campo de data persistido para consulta por usuário e mês, além dos índices exigidos pelas relações.
@@ -339,6 +344,7 @@ frontend/              Aplicação React
       transactions/    Formulário, lista e integração com a API
     components/        Componentes realmente compartilhados
 src/                   Backend Node.js
+  entities/transactions/defaultCategories.ts
   modules/
     transactions/      Rotas, validação e regras de movimentações
     categories/        Consulta das categorias iniciais
@@ -346,7 +352,6 @@ src/                   Backend Node.js
 prisma/
   schema.prisma
   migrations/
-  seed.ts
 docs/
   BACKLOG.md
   decisions/           Decisões técnicas curtas, criadas conforme necessário
@@ -378,4 +383,4 @@ Reordenar esta lista após a primeira validação. Não criar agora tabelas ou s
 | Agente de IA | Quais consultas ou registros ele poderá propor, e como o usuário confirmará alterações? |
 | Exportação e recuperação | Como o usuário obterá uma cópia dos próprios dados? |
 
-**Próximo passo sugerido:** refinar e iniciar BW-03 com as classes `User`, `Category` e `Transaction`, mapeamento Prisma e testes locais. Só depois avançar para a aplicação web de BW-15 e automação de BW-16.
+**Próximo passo sugerido:** avançar para BW-15, preparando a aplicação web e a integração entre frontend e backend.

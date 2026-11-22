@@ -55,6 +55,14 @@ test('rejects an invalid owner, a missing category, or another users category', 
   );
 });
 
+test('rejects investment categories for income and expense transactions', () => {
+  const investmentCategory = new TransactionCategory(-1, 'CDI', TransactionType.INVESTMENT, null, 'user-id');
+  assert.throws(
+    () => new Transaction(-1, investmentCategory, 100, Date.parse('2024-01-01T00:00:00.000Z'), 'user-id'),
+    /income or expense/,
+  );
+});
+
 test('rejects invalid timestamps', () => {
   for (const timestamp of [NaN, Infinity, -Infinity, 8_640_000_000_000_001]) {
     assert.throws(() => new Transaction(-1, category, 100, timestamp, 'user-id'), /Date is invalid/);

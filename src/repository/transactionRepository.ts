@@ -4,11 +4,15 @@ import { TransactionCategory } from '../entities/transactions/transactionCategor
 import { prisma } from '../repository/repository.ts';
 
 export class TransactionRepository {
-    private toEntity(transaction: PrismaTransaction & { category: PrismaCategory }): Transaction {
-        const category = new TransactionCategory(
-            transaction.category.id, transaction.category.label, transaction.category.type,
-            transaction.category.parentId, transaction.category.userId, transaction.category.isDefault,
+    private toCategoryEntity(category: PrismaCategory): TransactionCategory {
+        return new TransactionCategory(
+            category.id, category.label, category.type,
+            category.parentId, category.userId, category.isDefault,
         );
+    }
+
+    private toEntity(transaction: PrismaTransaction & { category: PrismaCategory }): Transaction {
+        const category = this.toCategoryEntity(transaction.category);
         return new Transaction(
             transaction.id,
             category,
@@ -73,6 +77,11 @@ export class TransactionRepository {
         Transaction.validateId(id);
         Transaction.validateUserId(userId);
         TransactionCategory.validateId(newCategoryId);
+
+        const category = await prisma.transactionCategory.findUniqueOrThrow({
+            where: { id_userId: { id: newCategoryId, userId } },
+        });
+        Transaction.validateCategory(this.toCategoryEntity(category), userId);
 
         const updated = await prisma.transaction.update({
             where: { id, userId },

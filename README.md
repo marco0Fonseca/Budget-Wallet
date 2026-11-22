@@ -57,7 +57,19 @@ No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` 
 
 Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
 
-Os testes cobrem ferramentas locais, entidades e a migration inicial em SQLite. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, build e servidor ainda serão configurados.
+Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` cobre backend, testes e scripts Prisma; frontend, build e servidor ainda serão configurados.
+
+## Automação de navegador
+
+O Playwright CLI está instalado como dependência local. Inicialize o workspace uma vez com `npx playwright cli install`; `.playwright-cli/` fica ignorado pelo Git. Para abrir uma página local e inspecioná-la:
+
+```sh
+npx playwright cli open http://localhost:3000
+npx playwright cli snapshot
+npx playwright cli close
+```
+
+Consulte os comandos disponíveis com `npx playwright cli --help`.
 
 ## Banco local e migrations
 
@@ -71,7 +83,13 @@ npm run db:status
 
 O banco padrão é `dev.db` na raiz, ignorado pelo Git. Para mudar a conexão, copie `.env.example` para `.env` e ajuste `DATABASE_URL`. Para futuras alterações no schema, use `npm run db:migrate -- --name nome_da_alteracao` em um banco de desenvolvimento.
 
-Os testes de schema aplicam o SQL em SQLite em memória. Prisma Client, adapter, repositórios e seed ainda não foram configurados. As decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md).
+Prisma Client é gerado em `src/generated/prisma/`, pasta local ignorada pelo Git. Após instalar as dependências e alterar o schema, gere o cliente com:
+
+```sh
+npx prisma generate --config prisma.config.ts
+```
+
+O adapter SQLite, a conexão e os repositórios de usuário, categorias, movimentações e investimentos já estão configurados. Os testes de integração usam bancos SQLite temporários. O catálogo de categorias padrão está em `src/entities/transactions/defaultCategories.ts`; ele ainda será integrado ao fluxo de criação de conta. Decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md) e [exclusão de usuário](docs/decisions/0002-user-deletion.md).
 
 ## Planejamento
 

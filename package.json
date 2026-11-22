@@ -16,6 +16,7 @@
     "db:status": "prisma migrate status --config prisma.config.ts"
   },
   "devDependencies": {
+    "@playwright/cli": "^0.1.25",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "22.20.5",
     "prisma": "7.10.1",

@@ -35,6 +35,7 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 - `updateDescription` remove espaços externos; texto vazio ou `undefined` limpa a descrição no banco. `updateAmountCents` valida centavos antes da gravação.
 
 - Cada lançamento tem valor positivo em centavos, data e categoria do mesmo proprietário. Descrição é opcional; o tipo vem da categoria.
+- `Transaction` aceita apenas categorias `INCOME` ou `EXPENSE`; `INVESTMENT` é reservado à entidade `Investment`.
 - `Transaction.amountCents` é um campo `readonly` expresso em inteiros de 1 a 2.147.483.647 centavos, sem arredondamento automático. A conversão da entrada em reais deve ocorrer antes de construir a entidade. `monetaryValue()` retorna uma string com ponto e duas casas decimais (1550 → "15.50"), apenas para apresentação; cálculos usam centavos. Não há getter/setter `value`. Totais agregados precisam de validação própria de limite.
 - A classe usa provisoriamente `dateTimestamp` em milissegundos inteiros seguros, com validação de data válida. A persistência converte o timestamp para `BigInt` e o reconstrói como `number`. A descrição opcional fica no final do construtor, tem espaços externos removidos e, se vazia, é omitida.
 - Por decisão do usuário, a proibição de datas futuras foi suspensa nesta versão. Isso não significa que uma ocorrência futura já tenha sido paga ou recebida; a distinção entre previsto e realizado será refinada em BW-17 antes de automatizar recorrências.
@@ -50,30 +51,24 @@ O método updateParent aceita null para transformar uma subcategoria em raiz ou 
 
 Uma categoria nova tem `id = -1` apenas em memória. O repositório aceita esse estado no `create`, omite o ID na inserção e retorna outra entidade com o ID autoincremental gerado pelo banco. A entidade original mantém `-1`; categorias já persistidas não podem ser reenviadas ao `create`. IDs persistidos e usados em consultas/atualizações devem ser números inteiros de 1 a 2.147.483.647, compatíveis com `Int` do Prisma. `parentId` aceita `null` ou um ID positivo válido, nunca `-1`. A sequência é gerada pelo banco e pode apresentar lacunas.
 
-Usar uma única entidade `Category`, com `parentId` opcional apontando para outra categoria. Uma subcategoria é uma categoria com pai; não precisa de uma classe ou tabela separada. BW-03 implementará a classe de domínio `Category` e seu mapeamento Prisma, mantendo as regras coerentes entre domínio e persistência.
+Usar a entidade `TransactionCategory`, com `parentId` opcional apontando para uma categoria raiz. Subcategorias são categorias comuns vinculadas a um pai; não precisam de classe ou tabela separada. A entidade, o schema Prisma e as operações de persistência já estão implementados.
 
-Sugestão inicial de categorias, copiadas para cada usuário e marcadas com `isDefault: true`:
+O catálogo inicial aprovado contém 21 categorias. Todas são raízes (`parentId: null`), são copiadas por usuário e recebem `isDefault: true`. O repositório inclui `createDefaultCategoriesForUser(userId)` para persistir a cópia individual; o futuro fluxo de criação de conta no servidor chamará essa rotina.
 
-O campo `isDefault` é `false` para categorias personalizadas. Edição e exclusão devem bloquear categorias padrão, inclusive alterações de nome, tipo, pai e do próprio indicador. Esse indicador é definido pelo servidor, não por dados livres enviados pelo cliente. A exclusão da conta continua removendo todas as categorias em cascata. `updateLabel`, `updateType`, `updateParent` e `delete` já verificam a proteção. A exclusão isolada exige categoria do próprio usuário, não padrão e sem subcategorias; vínculos com transações ou investimentos também impedem a exclusão pelo banco. A criação automática das categorias padrão ainda está pendente.
+O campo `isDefault` é `false` para categorias personalizadas. Edição e exclusão devem bloquear categorias padrão, inclusive alterações de nome, tipo, pai e do próprio indicador. Esse indicador é definido pelo servidor, não por dados livres enviados pelo cliente. A exclusão da conta continua removendo todas as categorias em cascata. `updateLabel`, `updateType`, `updateParent` e `delete` já verificam a proteção. A exclusão isolada exige categoria do próprio usuário, não padrão e sem subcategorias; vínculos com transações ou investimentos também impedem a exclusão pelo banco.
 
 A alteração de tipo só pode partir de uma categoria raiz e deve atualizar também suas subcategorias diretas em uma única transação. É bloqueada se qualquer categoria envolvida for padrão ou tiver transações ou investimentos vinculados. A criação pelo repositório só aceita pai existente, do mesmo usuário e tipo, cujo parentId seja nulo. Assim, o limite de dois níveis é validado na entrada, e updateType trata apenas a raiz e suas filhas diretas. Escritas diretas no banco não recebem essa validação de profundidade. Para respeitar a chave estrangeira composta com `onUpdate: Restrict`, o repositório desvincula temporariamente as filhas, altera os tipos e restaura os vínculos dentro da mesma transação; qualquer falha desfaz todas as etapas.
 
-| Tipo | Categoria | Subcategorias sugeridas |
-| --- | --- | --- |
-| Receita | Trabalho | Salário, Freelance |
-| Receita | Outras receitas | — |
-| Despesa | Alimentação | Mercado, Delivery, Restaurantes |
-| Despesa | Moradia | Aluguel, Condomínio, Água, Energia, Internet |
-| Despesa | Transporte | Transporte público, Combustível, Aplicativos |
-| Despesa | Saúde | Farmácia, Consultas |
-| Despesa | Entretenimento | Cinema, Passeios |
-| Despesa | Educação | Cursos, Livros |
-| Despesa | Outras despesas | — |
+| Tipo | Categorias padrão (todas raiz) |
+| --- | --- |
+| Receita | Salário, Freelance, Renda extra |
+| Despesa | Alimentação, Moradia, Transporte, Saúde, Educação, Entretenimento, Compras, Contas e serviços, Assinaturas, Cuidados pessoais, Impostos e taxas |
+| Investimento | Investimentos, CDI, Locação, Tesouro Direto, CDB, Ações, Fundos imobiliários |
 
 Regras propostas:
 
-- Começar com dois níveis: categoria e subcategoria. A quantidade de categorias é variável; profundidade maior pode ser refinada depois.
-- Pai e filha pertencem ao mesmo usuário e têm o mesmo tipo (receita ou despesa). Impedir ciclos, autorreferência e um terceiro nível, inclusive ao mover categorias.
+- Categorias personalizadas podem ter até dois níveis; as categorias padrão aprovadas são todas raiz. A quantidade de categorias é variável; profundidade maior pode ser refinada depois.
+- Pai e filha pertencem ao mesmo usuário e têm o mesmo tipo (`INCOME`, `EXPENSE` ou `INVESTMENT`). Impedir ciclos, autorreferência e um terceiro nível, inclusive ao mover categorias.
 - Um lançamento aponta para uma única categoria, genérica ou específica. “Alimentação → Delivery” é exibido como caminho, sem criar dois lançamentos.
 - Totais de uma categoria incluem seus lançamentos diretos e os das subcategorias, contando cada lançamento uma vez.
 - Nomes normalizados são únicos entre categorias irmãs do mesmo usuário e tipo; aplicar também às categorias raiz, sem depender apenas de unicidade com `parentId` nulo no banco.

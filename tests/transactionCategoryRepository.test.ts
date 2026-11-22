@@ -90,6 +90,24 @@ test('lists only the users default categories including default subcategories', 
     }
 });
 
+test('creates the default root categories for one user idempotently', async (t) => {
+    assert.ok(prisma);
+    const { user } = await createTestUser(t, 'default.catalog');
+
+    const firstRun = await categories.createDefaultCategoriesForUser(user.id);
+    const secondRun = await categories.createDefaultCategoriesForUser(user.id);
+
+    assert.equal(firstRun.length, 21);
+    assert.ok(firstRun.every(category => category.isDefault && category.parentId === null));
+    assert.ok(firstRun.some(category => category.label === 'CDI' && category.type === TransactionType.INVESTMENT));
+    assert.ok(firstRun.some(category => category.label === 'Locação' && category.type === TransactionType.INVESTMENT));
+    assert.deepStrictEqual(secondRun, firstRun);
+    assert.equal(await prisma.transactionCategory.count({ where: { userId: user.id } }), 21);
+
+    const { user: otherUser } = await createTestUser(t, 'default.other-owner');
+    assert.deepStrictEqual(await categories.findAllByUserId(otherUser.id), []);
+});
+
 test('updates root and children together without changing another users categories', async (t) => {
     assert.ok(prisma);
     const { user } = await createTestUser(t, 'type.owner');

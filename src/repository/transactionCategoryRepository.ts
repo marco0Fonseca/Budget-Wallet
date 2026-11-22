@@ -1,6 +1,7 @@
 import type { TransactionCategory as PrismaTransactionCategory } from '../generated/prisma/client.ts';
 import { TransactionCategory } from '../entities/transactions/transactionCategory.ts';
 import { TransactionType } from '../entities/transactions/transactionType.ts';
+import { defaultCategories } from '../entities/transactions/defaultCategories.ts';
 import { prisma } from '../repository/repository.ts';
 
 export class TransactionCategoryRepository {
@@ -41,6 +42,38 @@ export class TransactionCategoryRepository {
             },
         });
         return this.toEntity(created);
+    }
+
+    async createDefaultCategoriesForUser(userId: string): Promise<TransactionCategory[]> {
+        TransactionCategory.validateUserId(userId);
+
+        const existing = await this.findAllByUserId(userId);
+        const defaultsByKey = new Map<string, TransactionCategory>();
+        for (const category of existing) {
+            if (category.isDefault && category.parentId === null) {
+                defaultsByKey.set(`${category.type}:${category.label}`, category);
+            }
+        }
+
+        const result: TransactionCategory[] = [];
+        for (const definition of defaultCategories) {
+            const key = `${definition.type}:${definition.label}`;
+            let category = defaultsByKey.get(key);
+            if (!category) {
+                category = await this.create(new TransactionCategory(
+                    -1,
+                    definition.label,
+                    definition.type,
+                    null,
+                    userId,
+                    true,
+                ));
+                defaultsByKey.set(key, category);
+            }
+            result.push(category);
+        }
+
+        return result;
     }
 
     async findCategoryById(id: number, userId : string) : Promise<TransactionCategory | null> {

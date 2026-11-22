@@ -51,6 +51,10 @@ export class Transaction {
       throw new Error('Transaction category must belong to the same user.');
     }
 
+    if (category.type !== 'INCOME' && category.type !== 'EXPENSE') {
+      throw new Error('Transaction category must be income or expense.');
+    }
+
     return category;
   }
 
