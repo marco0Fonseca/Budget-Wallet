@@ -4,6 +4,10 @@ node_modules/
 # Prisma Client gerado localmente
 /src/generated/prisma/
 
+# Skills locais do agente
+/.agents/skills/
+/skills-lock.json
+
 # Builds, cache e relatórios gerados
 dist/
 build/
