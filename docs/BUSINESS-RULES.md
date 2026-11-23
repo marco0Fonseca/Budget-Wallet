@@ -53,7 +53,7 @@ Uma categoria nova tem `id = -1` apenas em memória. O repositório aceita esse 
 
 Usar a entidade `TransactionCategory`, com `parentId` opcional apontando para uma categoria raiz. Subcategorias são categorias comuns vinculadas a um pai; não precisam de classe ou tabela separada. A entidade, o schema Prisma e as operações de persistência já estão implementados.
 
-O catálogo inicial aprovado contém 21 categorias. Todas são raízes (`parentId: null`), são copiadas por usuário e recebem `isDefault: true`. O repositório inclui `createDefaultCategoriesForUser(userId)` para persistir a cópia individual; o futuro fluxo de criação de conta no servidor chamará essa rotina.
+O catálogo inicial aprovado contém 21 categorias. Todas são raízes (`parentId: null`), são copiadas por usuário e recebem `isDefault: true`. O repositório inclui `createDefaultCategoriesForUser(userId)` para persistir a cópia individual; o fluxo atual de cadastro no servidor chama essa rotina após criar a conta.
 
 O campo `isDefault` é `false` para categorias personalizadas. Edição e exclusão devem bloquear categorias padrão, inclusive alterações de nome, tipo, pai e do próprio indicador. Esse indicador é definido pelo servidor, não por dados livres enviados pelo cliente. A exclusão da conta continua removendo todas as categorias em cascata. `updateLabel`, `updateType`, `updateParent` e `delete` já verificam a proteção. A exclusão isolada exige categoria do próprio usuário, não padrão e sem subcategorias; vínculos com transações ou investimentos também impedem a exclusão pelo banco.
 

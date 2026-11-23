@@ -33,7 +33,7 @@ O projeto será desenvolvido utilizando:
 - **Node.js / npm**
 - **Vercel**
 
-O frontend usa React com Vite e o backend HTTP será Express, executado em Node.js. A tela de login e uma página de destino vazia já funcionam localmente; a integração HTTP e o restante da aplicação continuam em BW-15. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
+O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. A tela de login e uma página de destino vazia já funcionam localmente; a integração HTTP e o restante da aplicação continuam em BW-15. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 
@@ -62,9 +62,9 @@ No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` 
 
 Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
 
-Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor HTTP ainda será configurado.
+Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
 
-Para ver a tela de login, execute `npm run dev:frontend` e abra o endereço exibido pelo Vite. No ambiente local, qualquer identificador e senha não vazios permitem entrar na página vazia do Dashboard. O acesso demonstrativo não valida credenciais, não cria conta e não salva a senha. Os controles **Criar conta** e **Esqueceu a senha?** mostram estados informativos; cadastro e recuperação ainda não enviam dados. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações. O acesso demonstrativo fica indisponível no build de produção até a autenticação real ser implementada.
+Para ver a tela de login, execute `npm run dev:frontend` e abra o endereço exibido pelo Vite. No ambiente local, qualquer identificador e senha não vazios permitem entrar na página vazia do Dashboard. O acesso demonstrativo não valida credenciais, não cria contas e não salva a senha. O formulário de cadastro e a rota de signup estão em desenvolvimento; recuperação de senha ainda é apenas visual. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações. O acesso demonstrativo fica indisponível no build de produção até a autenticação real ser implementada.
 
 ## Automação de navegador
 
@@ -96,7 +96,7 @@ Prisma Client é gerado em `src/generated/prisma/`, pasta local ignorada pelo Gi
 npx prisma generate --config prisma.config.ts
 ```
 
-O adapter SQLite, a conexão e os repositórios de usuário, categorias, movimentações e investimentos já estão configurados. Os testes de integração usam bancos SQLite temporários. O catálogo de categorias padrão está em `src/entities/transactions/defaultCategories.ts`; ele ainda será integrado ao fluxo de criação de conta. Decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md) e [exclusão de usuário](docs/decisions/0002-user-deletion.md).
+O adapter SQLite, a conexão e os repositórios de usuário, categorias, movimentações e investimentos já estão configurados. Os testes de integração usam bancos SQLite temporários. O catálogo de categorias padrão está em `src/entities/transactions/defaultCategories.ts` e é copiado para o usuário no fluxo de cadastro. Decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md) e [exclusão de usuário](docs/decisions/0002-user-deletion.md).
 
 ## Planejamento
 

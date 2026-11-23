@@ -12,8 +12,6 @@ body { margin: 0; min-width: 320px; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102, 216, .14); }
-.skip-link { position: absolute; z-index: 5; top: -100px; left: 16px; padding: 12px 16px; border-radius: 8px; background: #fff; color: #064fbb; font-weight: 700; }
-.skip-link:focus-visible { top: 12px; }
 #login-title, #dashboard-main { scroll-margin-top: 24px; }
 
 .login-page {
@@ -55,6 +53,7 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
   box-shadow: 0 24px 60px rgba(42, 99, 172, .14);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 25px; font-weight: 760; letter-spacing: -.045em; white-space: nowrap; color: #081b40; }
+.create-card > .brand { margin-left: 52px; }
 .brand-icon { color: #fff; background: #0866d8; border-radius: 11px; display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; line-height: 0; }
 .brand-icon svg { width: 25px; height: 25px; }
 .login-content { margin-top: auto; margin-bottom: auto; padding: 10px 0 0; }
@@ -81,6 +80,33 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
 .text-button:hover { text-decoration-color: currentColor; }
 .signup-prompt { margin: 17px 0 0; text-align: center; color: #526987; font-size: 14px; }
 .signup-prompt .text-button { margin-left: 3px; }
+.create-user { width: 100%; padding-block: 8px; }
+.create-heading { display: flex; align-items: center; gap: 12px; }
+.create-user .create-heading h1 { font-size: clamp(32px, 2.8vw, 42px); }
+.back-button { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #1457a5; }
+.back-button:hover { background: #eef5ff; }
+.create-user .login-intro { margin-bottom: 18px; }
+.create-user .field { margin-bottom: 12px; }
+.create-user .field input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid #a4b7d4;
+  border-radius: 10px;
+  background: #fff;
+  color: #0c1f47;
+  font-size: 15px;
+}
+.create-user .field input:focus-visible { outline: 3px solid rgba(10, 99, 220, .35); outline-offset: 1px; border-color: #086bd9; }
+.signup-success { text-align: center; }
+.signup-success .login-intro { margin-inline: auto; }
+.signup-success-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%; background: #e2f6ee; color: #0a9c59; }
+.signup-success h1 { font-size: clamp(32px, 3vw, 42px); }
+.create-password-wrap { position: relative; }
+.create-user .create-password-wrap input { padding-right: 52px; }
+.create-password-wrap .password-toggle { position: absolute; right: 8px; top: 50%; margin-right: 0; transform: translateY(-50%); }
 .alternate-content { padding-block: 40px; }
 .alternate-content h1 { font-size: clamp(42px, 3.5vw, 53px); }
 .feature-note { margin: 0 0 24px; padding: 16px 18px; border-radius: 12px; background: #eaf3ff; color: #445c7b; font-size: 15px; line-height: 1.5; }
@@ -140,6 +166,10 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
 .sign-out:hover { background: #eaf3ff; }
 
 @media (min-width: 1171px) and (max-height: 760px) {
+  .create-user { padding-block: 4px; }
+  .create-user .login-intro { margin-bottom: 12px; }
+  .create-user .field { margin-bottom: 9px; }
+  .create-user .field input { height: 44px; }
   .login-content { padding-top: 8px; }
   .login-content h1 { font-size: clamp(43px, 3.3vw, 50px); }
   .login-intro { margin: 12px 0 18px; font-size: 16px; }
@@ -192,9 +222,11 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
   .brand { font-size: 23px; }.brand-icon { flex-basis: 36px; width: 36px; height: 36px; }.brand-icon svg { width: 24px; height: 24px; }
   .login-content { padding-top: 20px; }.login-content h1 { font-size: clamp(43px, 12vw, 54px); }
   .login-intro { font-size: 16px; margin-bottom: 24px; }.field label { font-size: 15px; }.input-wrap input { font-size: 14px; }
+  .create-user .field input { height: 46px; font-size: 14px; }
   .demo-note { font-size: 14px; gap: 9px; }
 }
 @media (max-width: 360px) {
+  .create-card > .brand { margin-left: 0; }
   .login-card { min-height: calc(100svh - 28px); }
   .login-content { margin-top: 32px; margin-bottom: 32px; }
   .input-wrap input::placeholder { font-size: 13px; }

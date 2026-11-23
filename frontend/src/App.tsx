@@ -17,7 +17,7 @@ function readLoginView(): LoginView {
   return view === 'create' || view === 'recover' ? view : 'login';
 }
 
-type IconName = 'wallet' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'chart' | 'calendar' | 'receipt' | 'trend' | 'arrowUp' | 'arrowDown' | 'equal' | 'restaurant' | 'market';
+type IconName = 'wallet' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'chart' | 'calendar' | 'receipt' | 'trend' | 'arrowUp' | 'arrowDown' | 'equal' | 'restaurant' | 'market' | 'back' | 'success';
 
 function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -35,6 +35,8 @@ function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
     equal: <><path d="M5 9h14M5 15h14" /></>,
     restaurant: <><path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v18M20 21V3c-4 3-5 7-5 11h5" /></>,
     market: <><path d="M3 10h18l-2 10H5L3 10Z" /><path d="m8 10 4-7 4 7M9 14v3M15 14v3" /></>,
+    back: <><path d="m14 5-7 7 7 7" /><path d="M7 12h14" /></>,
+    success: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16.5 9" /></>,
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
@@ -92,15 +94,21 @@ export function App() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showConfirmedPassword, setShowConfirmedPassword] = useState(false);
+  const [signupSucceeded, setSignupSucceeded] = useState(false);
   const [errors, setErrors] = useState<LoginErrors>({});
   const identifierRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const createFormRef = useRef<HTMLFormElement>(null);
+  const createPasswordRef = useRef<HTMLInputElement>(null);
+  const confirmedPasswordRef = useRef<HTMLInputElement>(null);
   const loginView = readLoginView();
 
   useEffect(() => {
     const titles: Record<LoginView, string> = { login: 'Entrar', create: 'Criar conta', recover: 'Recuperar senha' };
-    document.title = entered ? 'Dashboard · BudgetWallet' : `${titles[loginView]} · BudgetWallet`;
-  }, [entered, loginView]);
+    document.title = entered ? 'Dashboard · BudgetWallet' : signupSucceeded ? 'Conta criada · BudgetWallet' : `${titles[loginView]} · BudgetWallet`;
+  }, [entered, loginView, signupSucceeded]);
 
   useEffect(() => {
     const normalizeRoute = () => {
@@ -151,6 +159,54 @@ export function App() {
     history.pushState(null, '', '/');
   }
 
+  function leaveCreateForm() {
+    const form = createFormRef.current;
+    const hasEnteredData = form
+      ? Array.from(new FormData(form).values()).some(value => typeof value === 'string' && value.trim() !== '')
+      : false;
+
+    if (hasEnteredData && !window.confirm('Você já preencheu alguns dados. Quer descartá-los e voltar ao login?')) {
+      return;
+    }
+
+    window.location.assign('/');
+  }
+
+  function validatePasswordConfirmation() {
+    const password = createPasswordRef.current;
+    const confirmation = confirmedPasswordRef.current;
+    if (!password || !confirmation) return;
+    confirmation.setCustomValidity(
+      confirmation.value && confirmation.value !== password.value ? 'As senhas não coincidem.' : '',
+    );
+  }
+
+  async function submitCreateAccount(event: FormEvent<HTMLFormElement>){
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const body = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (response.status === 201) {
+        setSignupSucceeded(true);
+        window.setTimeout(() => window.location.assign('/'), 3000);
+        return;
+      }
+
+      const result: { error?: string } = await response.json();
+      window.alert(result.error ?? 'Não foi possível criar sua conta. Tente novamente.');
+    } catch {
+      window.alert('Não foi possível conectar ao servidor. Verifique se a API está em execução e tente novamente.');
+    }
+  }
+
   if (entered) {
     return <div className="dashboard-placeholder"><header><Brand /><button className="sign-out" type="button" onClick={signOut}>Sair</button></header><main id="dashboard-main" tabIndex={-1}><h1>Dashboard</h1></main></div>;
   }
@@ -158,7 +214,7 @@ export function App() {
   return (
     <main className="login-page">
       <div className="login-layout">
-        <section className="login-card" aria-labelledby="login-title">
+        <section className={`login-card${loginView === 'create' ? ' create-card' : ''}`} aria-labelledby="login-title">
           <Brand />
           {loginView === 'login' ? (
             <div className="login-content">
@@ -173,16 +229,62 @@ export function App() {
               </form>
               <p className="signup-prompt">Ainda não tem conta? <a className="text-button" href="/?view=create">Criar conta</a></p>
             </div>
+          ) : signupSucceeded ? (
+            <div className="login-content signup-success" role="status" aria-live="polite">
+              <span className="signup-success-icon"><Icon name="success" size={34} /></span>
+              <h1 id="login-title" tabIndex={-1}>Conta criada com Sucesso</h1>
+              <p className="login-intro">Você já pode acessar sua conta.</p>
+            </div>
+          ) : loginView === 'create' ? (
+            <div className="login-content create-user">
+            <div className="create-heading">
+              <button className="back-button" type="button" onClick={leaveCreateForm} aria-label="Voltar ao login" title="Voltar ao login"><Icon name="back" size={21} /></button>
+              <h1 id="login-title" tabIndex={-1}>Criar conta</h1>
+            </div>
+            <p className="login-intro">Preencha seus dados para criar seu acesso.</p>
+            <form ref={createFormRef} onSubmit={submitCreateAccount}>
+              <div className="field">
+                <label htmlFor="name">Nome Completo</label>
+                <input id="name" name="name" type="text" autoComplete="name" />
+              </div>
+
+              <div className="field">
+                <label htmlFor="email">E-mail</label>
+                <input id="email" name="email" type="email" autoComplete="email" />
+              </div>
+
+              <div className="field">
+                <label htmlFor="username">Username</label>
+                <input id="username" name="username" type="text" autoComplete="username" spellCheck={false} />
+              </div>
+
+              <div className="field">
+                <label htmlFor="create-password">Senha</label>
+                <div className="create-password-wrap">
+                  <input ref={createPasswordRef} id="create-password" name="password" type={showCreatePassword ? 'text' : 'password'} autoComplete="new-password" onInput={validatePasswordConfirmation} required />
+                  <button className="password-toggle" type="button" onClick={() => setShowCreatePassword(value => !value)} aria-label={showCreatePassword ? 'Ocultar senha do cadastro' : 'Mostrar senha do cadastro'} aria-pressed={showCreatePassword}><Icon name={showCreatePassword ? 'eyeOff' : 'eye'} /></button>
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="confirm-password">Confirmar Senha</label>
+                <div className="create-password-wrap">
+                  <input ref={confirmedPasswordRef} id="confirm-password" name="confirmPassword" type={showConfirmedPassword ? 'text' : 'password'} autoComplete="new-password" onInput={validatePasswordConfirmation} required />
+                  <button className="password-toggle" type="button" onClick={() => setShowConfirmedPassword(value => !value)} aria-label={showConfirmedPassword ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'} aria-pressed={showConfirmedPassword}><Icon name={showConfirmedPassword ? 'eyeOff' : 'eye'} /></button>
+                </div>
+              </div>
+              <button className="submit-button" type="submit">Criar conta</button>
+            </form>
+            </div>
           ) : (
-            <div className="login-content alternate-content">
-              <h1 id="login-title" tabIndex={-1}>{loginView === 'create' ? 'Criar conta' : 'Recuperar senha'}</h1>
-              <p className="login-intro">{loginView === 'create' ? 'Em breve você poderá criar sua conta aqui.' : 'Em breve você poderá solicitar a recuperação da senha aqui.'}</p>
-              <p className="feature-note">Esta opção ainda não está disponível. Por enquanto, use o acesso demonstrativo local para conhecer a tela.</p>
-              <a className="submit-button return-link" href="/">Voltar ao login</a>
+            <div className='login-content recover-password'>
+
             </div>
           )}
-          <p className="demo-note"><span />Acesso demonstrativo<span /></p>
-          <p className="demo-help">Use apenas dados fictícios.</p>
+          {loginView === 'login' && <>
+            <p className="demo-note"><span />Acesso demonstrativo<span /></p>
+            <p className="demo-help">Use apenas dados fictícios.</p>
+          </>}
         </section>
         <PreviewPanels />
       </div>
