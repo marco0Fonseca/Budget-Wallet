@@ -4,7 +4,7 @@ Documento evolutivo dos percursos, telas, ações e respostas visíveis ao usuá
 
 ## Navegação definida
 
-Após o login, o usuário entra na área autenticada. A navegação lateral mantém quatro destinos acessíveis: Dashboard, Transações, Categorias e Investimentos. O Dashboard permanece sem conteúdo nesta etapa; as outras três telas têm estados iniciais visuais enquanto aguardam integração com a API financeira.
+Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Dashboard e os quatro painéis têm prévias visuais com dados locais. Somente as rotas de autenticação estão conectadas à API; os fluxos financeiros ainda aguardam rotas e persistência.
 
 ```mermaid
 flowchart TD
@@ -14,11 +14,12 @@ flowchart TD
     D <--> R[Transações]
     D <--> C[Categorias]
     D <--> I[Investimentos]
-    N[Navegação lateral persistente entre as quatro áreas] --- D
+    D <--> P[Planejamento diário]
+    N[Navegação lateral persistente entre as cinco áreas] --- D
     D --> A[Assistente visual]
 ```
 
-As quatro áreas ficam acessíveis pela navegação lateral, inclusive ao sair do Dashboard. O botão Assistente abre um painel visual sem integração com IA. Previsões / acompanhamento mensal dia a dia continua previsto para refinamento posterior.
+As cinco áreas ficam acessíveis pela navegação lateral. O botão Assistente abre um painel visual sem integração com IA. Planejamento diário é, por enquanto, uma prévia de interface; cálculo de orçamento e redistribuição continuam pendentes em BW-13/BW-14.
 
 ## Entrada definida
 
@@ -33,14 +34,14 @@ A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo 
 
 | Tela/aba | Objetivo | Conteúdo inicial proposto |
 | --- | --- | --- |
-| Login | Entrar no Dashboard | E-mail ou username, senha e botão Entrar; acesso demonstrativo no primeiro incremento. Cadastro e recuperação na mesma página em incremento posterior. |
-| Dashboard | Entender rapidamente o mês | A navegação e o cabeçalho estão prontos; o conteúdo do Dashboard será implementado depois. |
-| Transações | Registrar e consultar movimentações | Tela inicial com estado vazio e ação de cadastro ainda desabilitada; listagem, filtros e operações serão conectadas aos repositórios em incrementos seguintes. |
-| Categorias | Organizar classificações | Tela inicial com estado vazio; listagem e gestão de categorias padrão e personalizadas aguardam integração. |
-| Investimentos | Consultar e acompanhar investimentos | Tela inicial com estado vazio; interface e projeção serão conectadas ao repositório em incremento posterior. A entidade inicial simula aporte único com taxa mensal constante. |
-| Previsões / Acompanhamento mensal dia a dia | Planejar e acompanhar a evolução do mês | Calendário com receitas previstas, despesas fixas, meta de economia, orçamento diário editável e redistribuição de sobras/excessos. Regras propostas em `BUSINESS-RULES.md`. |
+| Login | Entrar no Dashboard | Login, cadastro e recuperação provisória usam rotas da API. O login retorna JWT. A recuperação ainda aceita apenas identificador e senha nova, sem prova de posse da conta; não é segura para uso compartilhado ou real. |
+| Dashboard | Entender rapidamente o mês | Resumo local de receitas, despesas e resultado do período, despesas por categoria, últimos lançamentos e carteira estimada. Os atalhos levam aos painéis correspondentes; os dados aguardam integração com a API. |
+| Transações | Registrar e consultar movimentações | Prévia local com resumo mensal, busca, filtros por tipo, lista por data e painel de detalhes do lançamento selecionado. Criação, edição, exclusão e dados da conta aguardam integração com a API. O período vem do seletor global no topo. |
+| Categorias | Organizar classificações | Prévia local das categorias padrão e de duas subcategorias de exemplo. Busca por nome, filtros de tipo, hierarquia e origem e rolagem de cada painel funcionam no navegador. Criação, edição, exclusão e carregamento dos dados da conta aguardam integração. |
+| Investimentos | Consultar e acompanhar investimentos | Prévia local com resumo da carteira, evolução estimada e lista de aportes. Selecionar um item abre seus dados e o progresso do prazo; comparação de projeções fica para incremento posterior. Criação, edição, exclusão e dados da conta aguardam integração com a API. |
+| Planejamento diário | Planejar e acompanhar a evolução do mês | Prévia local com calendário, receita prevista, despesas fixas, meta para guardar, orçamento diário e resumo do dia selecionado. Edição e redistribuição ainda aguardam definição completa das regras e integração. Consulte `BUSINESS-RULES.md`. |
 
-Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`.
+Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`. As prévias atuais não devem ser confundidas com dados persistidos ou cálculos integrados.
 
 ## Esboço de baixa fidelidade
 
@@ -51,11 +52,11 @@ LOGIN
 │ [E-mail ou username]                          │
 │ [Senha             ]                          │
 │ [Entrar]                                     │
-│ Acesso demonstrativo — use dados fictícios    │
+│ [Criar conta] [Esqueceu a senha?]             │
 │ Mensagem de erro, quando houver               │
 └──────────────────────────────────────────────┘
 
-ÁREA PRINCIPAL — DASHBOARD
+ÁREA PRINCIPAL — ESBOÇO HISTÓRICO DO PRIMEIRO FLUXO
 ┌──────────────────────────────────────────────────────────────┐
 │ BudgetWallet                                          [Sair] │
 │ Dashboard | Receitas e Despesas | Investimentos | Previsões   │
@@ -69,11 +70,9 @@ LOGIN
 └──────────────────────────────────────────────────────────────┘
 ```
 
-“Previsões” é apenas um rótulo curto proposto para a navegação; a tela mantém o propósito de acompanhamento mensal dia a dia. A posição e o estilo da navegação serão ajustados ao layout responsivo.
+O esboço acima antecede a interface implementada e conserva uma referência visual simplificada. A navegação atual usa menu lateral e inclui os cinco destinos descritos. A versão com painéis distribuídos foi aplicada à página de login React; veja [Direção visual do login](LOGIN-DESIGN.md). A área autenticada usa a paleta azul e o painel visual do assistente.
 
-A versão com painéis distribuídos foi escolhida e aplicada à página de login React; veja [Direção visual do login](LOGIN-DESIGN.md). A área autenticada segue a paleta azul, com fundo em camadas, navegação lateral compacta e painel do assistente visual. O conteúdo do Dashboard será desenhado em um incremento posterior.
-
-## Primeiro percurso funcional
+## Fluxo financeiro planejado — ainda não integrado
 
 1. O usuário faz login e chega ao Dashboard.
 2. Abre Receitas e Despesas ou usa o atalho de novo lançamento.
@@ -83,19 +82,21 @@ A versão com painéis distribuídos foi escolhida e aplicada à página de logi
 
 Os exemplos de cálculo do resultado mensal estão em `BUSINESS-RULES.md`.
 
-Comportamentos esperados:
+Este é o fluxo de produto esperado para BW-04/05/06, não um fluxo já entregue. As telas atuais são demonstrações locais.
 
-- No protótipo, campo obrigatório vazio mantém o usuário na tela de entrada com mensagem compreensível; qualquer identificador e senha preenchidos permitem entrar.
-- Antes de entrar no protótipo, acessar diretamente uma tela interna leva ao login. Esse controle de navegação não representa autenticação nem proteção de API.
-- Sair limpa o estado de acesso demonstrativo e retorna ao login.
-- Com autenticação real em BW-09, sessão inválida leva ao login e a API rejeita acesso não autenticado.
+Comportamentos esperados após a integração:
+
+- Login, cadastro e recuperação fazem chamadas às rotas de autenticação. Credenciais inválidas e erros da API são apresentados ao usuário.
+- Após login válido, o JWT fica na sessão do navegador; as telas visuais ainda não usam esse token em rotas financeiras porque elas não existem.
+- Sair limpa a sessão e retorna ao login.
+- O backend ainda não valida JWT em rotas privadas nem aplica isolamento financeiro por usuário; essas proteções seguem pendentes em BW-09.
 - Mês sem lançamentos mostra totais zerados e orientação para cadastrar a primeira movimentação.
 - Erro ao salvar mantém o formulário disponível para correção ou nova tentativa, sem indicar sucesso.
-- A navegação autenticada ainda não implementa operações financeiras; ações desabilitadas indicam que a integração está pendente.
+- A navegação autenticada ainda não implementa operações financeiras; ações desabilitadas e dados de exemplo indicam que a integração está pendente.
 
 ## Calendário e planejamento
 
-Fluxo proposto na aba Previsões / Acompanhamento mensal:
+Prévia visual na aba Planejamento diário. O calendário e os valores são locais; este fluxo de produto ainda depende do refinamento e da implementação de BW-13/BW-14:
 
 1. Selecionar o mês e informar receitas esperadas, despesas fixas com vencimento e meta de economia.
 2. Conferir o orçamento disponível para despesas variáveis e a sugestão de valor diário.
@@ -120,16 +121,20 @@ Amanhã    R$ 50,00               —                  —
   Prévia dos novos valores                    [Confirmar]
 ```
 
-## Recorte incremental
+## Estado do front e próximos incrementos
 
-- **Primeiro incremento:** base executável, estrutura das quatro áreas, acesso demonstrativo com e-mail ou username e senha, e cadastro/listagem de receitas e despesas. O Dashboard começa como tela de entrada; os totais chegam no incremento seguinte.
-- **Segundo incremento:** resumo mensal no Dashboard, edição/exclusão e validação do fluxo completo.
-- **Incrementos posteriores:** comportamento de Investimentos e acompanhamento diário/previsões, refinados conforme prioridade. A definição das abas não exige criar suas tabelas agora.
-- **Acesso real, em incremento posterior:** autenticação por e-mail ou username e senha, cadastro e recuperação na própria página de login. O protótipo local atende ao fluxo demonstrativo, mas não ao aceite de autenticação real de BW-09.
+- O front tem navegação para cinco áreas, prévias locais dos painéis financeiros e interações visuais de busca, filtros, seleção e calendário.
+- Cadastro e login chamam a API e o cadastro cria categorias padrão. A recuperação por identificador está implementada apenas como fluxo provisório de desenvolvimento.
+- BW-04 a BW-06 seguem pendentes: criar rotas financeiras, integrar transações e persistir consultas, correções e exclusões.
+- BW-12 segue pendente de API e integração para gerir categorias pela tela. Repositório e domínio já existem.
+- BW-13/BW-14 seguem pendentes de regras finais e implementação persistente; a prévia de Planejamento diário não os conclui.
+- BW-09 segue parcial: falta validação de JWT em rotas protegidas, autorização e testes de isolamento por proprietário; recuperar senha requer prova de posse da conta antes de uso real.
+
+O protótipo visual foi concluído intencionalmente para avaliação dos stakeholders antes da integração com o backend. Na revisão visual independente de 24/11/2026, a direção geral foi aprovada. Como insumos para decisões futuras de produto e refinamento visual, foram anotados: representar valores negativos abaixo da linha zero no gráfico de resultado, avaliar um resumo de Planejamento diário na Dashboard e agrupar categorias excedentes da pizza em “Outras”. Esses pontos não bloqueiam a avaliação do protótipo nem substituem a integração posterior dos dados reais.
 
 ## Encerramento de BW-01
 
 - Categorias iniciais e planejamento mensal aprovados pelo usuário em 17/11/2026. Suas regras estão centralizadas em `BUSINESS-RULES.md`.
 - O fluxo e o esboço de baixa fidelidade servem de base à implementação; ajustes visuais e testes de usabilidade permanecem incrementais.
 
-BW-01 está **Concluído** como definição inicial do fluxo e das regras. O aceite foi construído nesta conversa; não representa implementação nem revisão de código por outro integrante. Detalhes operacionais de fechamento do dia, pagamentos parciais e recorrências serão refinados em BW-13/BW-14, sem bloquear as ferramentas locais de BW-02 ou as classes, ORM e testes de BW-03. A aplicação web será integrada em BW-15.
+BW-01 está **Concluído** como definição inicial do fluxo e das regras. O aceite foi construído nesta conversa; não representa implementação nem revisão de código por outro integrante. Detalhes operacionais de fechamento do dia, pagamentos parciais e recorrências serão refinados em BW-13/BW-14, sem bloquear as ferramentas locais de BW-02 ou as classes, ORM e testes de BW-03. BW-15 está em andamento e já entregou o esqueleto visual e a integração das rotas de autenticação; os fluxos financeiros seguem para implementação vertical conforme o backlog.

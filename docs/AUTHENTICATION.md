@@ -31,6 +31,6 @@ Antes do uso real, a redefinição deve exigir um token aleatório, temporário 
 
 ## Estado da implementação
 
-O helper em `src/server/auth.ts` contém geração/verificação de hash e assinatura de token. A rota `POST /api/auth/signup` cria o usuário e suas categorias padrão individuais. A rota `POST /api/auth/signin` valida e-mail ou username com a senha e devolve o JWT. A emissão do token não implementa sua verificação nem protege outras rotas; middleware de autenticação, isolamento por usuário e testes do fluxo permanecem necessários antes de considerar a autenticação completa.
+O helper em `src/server/auth.ts` contém geração/verificação de hash e assinatura de token. As rotas `POST /api/auth/signup`, `/api/auth/signin` e `/api/auth/recover` estão conectadas aos formulários React. O cadastro cria o usuário e suas categorias padrão individuais; o login valida e-mail ou username com a senha e devolve o JWT. A recuperação permanece insegura e provisória conforme descrito acima. A emissão do token não implementa sua verificação nem protege outras rotas; middleware de autenticação, isolamento por usuário e testes do fluxo permanecem necessários antes de considerar a autenticação completa.
 
-O contrato de cadastro e recuperação está evoluindo em BW-11 e a autenticação de sessão e proteção de rotas está definida em BW-09 no [backlog](BACKLOG.md). Atualize esta página conforme as rotas e a validação do JWT forem implementadas.
+O cadastro está implementado; BW-11 permanece parcial até que a recuperação exija prova de posse da conta. A validação da sessão e a proteção das rotas estão pendentes em BW-09 no [backlog](BACKLOG.md). Atualize esta página quando middleware JWT e recuperação segura forem implementados.

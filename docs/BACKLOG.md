@@ -1,12 +1,12 @@
 # Backlog inicial — BudgetWallet
 
-Este backlog é evolutivo. A configuração local e as primeiras entidades e persistência foram concluídas em BW-03 para a versão inicial. Vamos detalhar apenas o necessário para entregar e validar o primeiro fluxo; as próximas funcionalidades serão refinadas conforme aprendermos com o uso.
+Este backlog é evolutivo. BW-03 entregou as primeiras entidades e persistência. Após o domínio, a equipe decidiu concluir um protótipo visual abrangente para que stakeholders avaliassem a direção futura do produto antes da integração dos fluxos financeiros. Os estados abaixo distinguem o protótipo de interface das funcionalidades persistidas.
 
 ## Objetivo da primeira entrega
 
 **Uma pessoa consegue fazer login, acessar o Dashboard, registrar uma receita ou despesa, classificá-la e consultar suas movimentações e o resultado do mês.**
 
-A navegação definida e o esboço das telas estão em [Fluxo do usuário](USER-FLOW.md): Login → Dashboard, com outras três abas — Receitas e Despesas, Investimentos e Previsões / Acompanhamento mensal dia a dia. As duas últimas serão implementadas em incrementos posteriores.
+A navegação e o estado real das telas estão em [Fluxo do usuário](USER-FLOW.md): Login → Dashboard, com Transações, Categorias, Investimentos e Planejamento diário. Os painéis financeiros já têm protótipos locais; seus dados e operações ainda precisam de integração.
 
 Definições e recorte inicial (propostas restantes indicadas em cada documento):
 
@@ -15,7 +15,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 - Uma categoria por lançamento.
 - Categorias editáveis, com subcategorias e opções iniciais sugeridas em [Regras de negócio](BUSINESS-RULES.md). O mesmo documento detalha a proposta do calendário, meta de economia e redistribuição do orçamento diário para incremento posterior.
 - O resultado mensal é receitas menos despesas do período; não representa saldo bancário.
-- O primeiro incremento usa acesso demonstrativo: e-mail ou username e senha preenchidos permitem entrar, sem validar credenciais. Autenticação real, cadastro e recuperação na própria página de login ficam para um incremento posterior, antes de uso real.
+- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. Ainda faltam verificação do JWT em rotas privadas e isolamento financeiro por usuário. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
 
 ## Como trabalhar com este backlog
 
@@ -29,7 +29,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais itens seguem os estados indicados em suas seções. Por decisão do usuário, a sequência passa a ser ambiente local → classes, ORM e testes → aplicação web e automação de qualidade. BW-15 e BW-16 recebem o trabalho adiado de BW-02. BW-10 cobre o acesso demonstrativo inicial; BW-09 e BW-11 cobrem o acesso real posterior. Os IDs existentes foram preservados.
+BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders; não se esperava que os painéis já estivessem integrados ao backend. BW-15 segue **Em andamento** para fechar a execução documentada do servidor e a aplicação integrada. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam, mas ainda faltam proteção de rotas e recuperação segura. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue. Próxima fase: finalizar sessão protegida e iniciar a integração vertical das funcionalidades financeiras.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
@@ -37,19 +37,19 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 | BW-02 | Configurar ferramentas locais e executor de testes | P | BW-01 | 1 |
 | BW-03 | Criar classes iniciais, mapeamento ORM e testes | M | BW-01, BW-02 | 1 |
 | BW-15 | Preparar e integrar frontend e backend | M | BW-03 | 1, após domínio e persistência |
-| BW-16 | Configurar lint e CI | P | BW-15 | 1, após aplicação executável |
-| BW-10 | Criar a entrada demonstrativa e navegação | P | BW-15 | 1 |
-| BW-04 | Registrar e listar movimentações de ponta a ponta | M | BW-03, BW-15 | 1 |
+| BW-09 | Autenticar usuários e proteger seus dados | M | BW-03, BW-15 | Próxima prioridade: proteção da API |
+| BW-04 | Registrar e listar movimentações de ponta a ponta | M | BW-03, BW-09, BW-15 | Próxima fatia vertical |
+| BW-05 | Consultar o resultado de um mês | P | BW-04 | Em seguida |
+| BW-06 | Corrigir e excluir lançamentos | P | BW-04 | Em seguida |
 | BW-12 | Gerenciar categorias e subcategorias | M | BW-03, BW-04 | 2 |
-| BW-05 | Consultar o resultado de um mês | P | BW-04 | 2 |
-| BW-06 | Corrigir e excluir lançamentos | P | BW-04 | 2 |
 | BW-07 | Validar a experiência e refinar a próxima entrega | P | BW-05, BW-06 | 2 |
-| BW-08 | Validar a estratégia de persistência e publicação | P | BW-03, BW-15 | Antes de publicar |
-| BW-09 | Autenticar usuários e proteger seus dados | M | BW-03, BW-04, BW-10 | Posterior, antes de uso real |
-| BW-11 | Cadastrar conta e recuperar senha na página de login | M | BW-09 | Posterior, antes de uso real |
+| BW-18 | Integrar investimentos à API | A estimar | BW-03, BW-09, BW-15 | Posterior |
 | BW-13 | Planejar o mês e visualizar o calendário | A estimar | BW-05, BW-06 | Posterior |
 | BW-14 | Redistribuir o orçamento entre dias | A estimar | BW-13 | Posterior |
 | BW-17 | Definir recorrências e regras de datas | A estimar | BW-03 | Posterior, antes de automatizar recorrências |
+| BW-16 | Configurar lint e CI | P | BW-15 | Após estabilizar a aplicação |
+| BW-08 | Validar a estratégia de persistência e publicação | P | BW-03, BW-15 | Antes de publicar |
+| BW-11 | Cadastrar conta e recuperar senha na página de login | M | BW-09 | Parcial; fechar recuperação segura antes de uso real |
 
 ### BW-01 — Alinhar o primeiro fluxo e suas regras
 
@@ -93,7 +93,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 
 ### BW-03 — Criar classes iniciais, mapeamento ORM e testes
 
-**Estado:** Concluído para a versão inicial. Revisão independente por subagente concluída em 22/11/2026; o usuário dispensou a conferência em clone limpo e a revisão por outro integrante ativo devido ao prazo. `npm run check` passou nesta revisão. Entidades `User`, `TransactionCategory`, `Transaction`, `Investment`, schema Prisma, Prisma Client local, quatro migrations e repositórios estão implementados. O catálogo aprovado contém 21 categorias raiz, incluindo opções de investimento; `createDefaultCategoriesForUser` cria a cópia individual de forma repetível. A integração da rotina ao cadastro real ficará em BW-11. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md) e [0002-user-deletion.md](decisions/0002-user-deletion.md).
+**Estado:** Concluído para a versão inicial. Revisão independente por subagente concluída em 22/11/2026; o usuário dispensou a conferência em clone limpo e a revisão por outro integrante ativo devido ao prazo. `npm run check` passou nessa revisão. Entidades `User`, `TransactionCategory`, `Transaction`, `Investment`, schema Prisma, Prisma Client local, quatro migrations e repositórios estão implementados. O catálogo aprovado contém 21 categorias raiz, incluindo opções de investimento; `createDefaultCategoriesForUser` cria a cópia individual de forma repetível e já é chamada no cadastro real. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md) e [0002-user-deletion.md](decisions/0002-user-deletion.md).
 
 **Objetivo:** construir um primeiro modelo executável do domínio, coerente com o ORM e verificável sem frontend ou servidor HTTP.
 
@@ -119,6 +119,8 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 
 ### BW-04 — Registrar e listar movimentações de ponta a ponta
 
+**Estado:** A iniciar. A tela de Transações é uma prévia local; ainda não há rotas financeiras nem persistência integrada.
+
 **História:** como usuário, quero registrar e consultar receitas e despesas para acompanhar minhas movimentações.
 
 **Trabalho:** implementar contrato HTTP mínimo, validação no servidor, formulário React e listagem. Usar as categorias raiz do catálogo padrão nesta entrega; a edição e criação de categorias pelo usuário entram em BW-12.
@@ -135,6 +137,8 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 
 ### BW-05 — Consultar o resultado de um mês
 
+**Estado:** A iniciar. Os resumos e gráficos do Dashboard ainda usam exemplos locais.
+
 **História:** como usuário, quero consultar receitas, despesas e resultado do mês para entender meu período financeiro.
 
 **Critérios de aceite:**
@@ -144,8 +148,11 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 - Os totais consideram todos os lançamentos do período, independentemente da paginação.
 - O resultado é receitas menos despesas, calculado em centavos; mês vazio apresenta zero.
 - Testes cobrem virada de mês/ano, mês vazio e resultado negativo.
+- O Dashboard usa os mesmos totais para os resumos e o gráfico mensal; seus exemplos locais são substituídos pelos dados persistidos.
 
 ### BW-06 — Corrigir e excluir lançamentos
+
+**Estado:** A iniciar. Ações de edição e exclusão ainda não persistem alterações.
 
 **História:** como usuário, quero corrigir ou remover um registro incorreto para manter meus dados consistentes.
 
@@ -184,9 +191,11 @@ BW-01, BW-02 e BW-03 estão **Concluídos** para a versão inicial; os demais it
 
 **Objetivo:** permitir uso real sem acesso indevido a dados financeiros.
 
-**Trabalho:** escolher uma solução de autenticação, conectar a identidade às entidades existentes e substituir o usuário fixo de desenvolvimento.
+**Trabalho:** verificar JWT nas rotas privadas e usar a identidade validada para autorizar acesso aos dados do usuário.
 
-Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-10 e protegendo as rotas de BW-04 antes de uso real. O método definido é e-mail ou username e senha, com validação real de credenciais nesta etapa.
+**Estado:** Parcial. Login valida credenciais e emite JWT; a interface mantém o token na sessão do navegador. Ainda não há middleware verificando JWT nem rotas financeiras protegidas ou testes de isolamento.
+
+O método definido é e-mail ou username e senha. Esta proteção é pré-requisito para expor dados financeiros por API.
 
 **Critérios de aceite:**
 
@@ -197,32 +206,25 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 - Testes com dois usuários provam que um não consegue consultar ou alterar registros e categorias do outro, inclusive usando IDs conhecidos.
 - O usuário fixo de desenvolvimento não fica disponível no ambiente de uso real.
 
-### BW-10 — Criar a entrada demonstrativa e navegação
+### BW-10 — Criar a entrada demonstrativa e navegação (substituído)
 
-**Objetivo:** validar o fluxo Login → Dashboard sem depender da autenticação real.
-
-**Critérios de aceite:**
-
-- A página apresenta E-mail ou username, Senha e Entrar; qualquer identificador e senha não vazios permitem entrar no Dashboard.
-- O identificador aceita username sem exigir formato de e-mail; a senha fica visualmente oculta e não é persistida nem registrada em logs.
-- Campos vazios mostram mensagem de validação. O modo demonstrativo usa apenas dados fictícios e um usuário local de demonstração, sem criar contas a cada entrada.
-- A navegação disponibiliza Dashboard e as três abas definidas; funcionalidades futuras ficam identificadas como “Em breve”.
-- Sair retorna ao login e limpa o estado demonstrativo; acesso direto antes de entrar retorna ao login, sem apresentar esse controle como autenticação real.
-- O modo demonstrativo fica restrito ao desenvolvimento local. Cadastro e recuperação ainda não possuem ações funcionais.
+**Estado:** Não implementado como planejado. Foi ultrapassado pelo desenvolvimento antecipado de cadastro e login reais em BW-09/BW-11. A navegação e os cinco painéis visuais foram feitos em BW-15, com dados locais. Não transportar os critérios de login demonstrativo para a versão atual nem contar este item como concluído.
 
 ### BW-11 — Cadastrar conta e recuperar senha na página de login
 
-**Objetivo:** permitir criação de conta e recuperação de acesso na mesma página de entrada, em incremento posterior.
+**Estado:** Parcial. Cadastro e login estão ligados à API; cadastro cria categorias padrão. Recuperação redefine senha diretamente pelo identificador, sem verificação da posse da conta, e não atende ao critério de segurança para uso compartilhado ou produção. Consulte [Autenticação e JWT](AUTHENTICATION.md).
 
-**Critérios de aceite iniciais, a refinar antes da implementação:**
+**Objetivo:** permitir criação de conta e recuperação de acesso na página de entrada.
 
-- “Criar conta” e “Esqueci minha senha” abrem seus respectivos formulários na própria página, com opção de voltar ao login.
-- O cadastro permite definir e-mail, username e senha; unicidade e normalização de identificadores são especificadas e validadas no servidor.
-- Ao criar a conta, o servidor cria as categorias padrão individuais chamando `TransactionCategoryRepository.createDefaultCategoriesForUser`.
-- A recuperação usa o e-mail da conta e um mecanismo de redefinição com validade limitada e uso único; não revela se uma conta existe nem expõe a senha anterior.
-- Regras de senha, verificação de e-mail, envio de mensagens e armazenamento seguro de credenciais são definidas no refinamento, com testes dos fluxos de sucesso e falha.
+Cadastro, login, formulários da página de entrada e criação das categorias padrão estão implementados. Permanecem pendentes:
+
+- Substituir a redefinição direta por identificador por token temporário, de uso único, enviado ao e-mail verificado.
+- Não revelar se a conta existe nas respostas da recuperação.
+- Refinar verificação de e-mail e política de senha e testar fluxos de sucesso, expiração e falha.
 
 ### BW-12 — Gerenciar categorias e subcategorias
+
+**Estado:** A iniciar. A tela de Categorias tem busca, filtros e seleção locais; CRUD ainda não está conectado à API.
 
 **Objetivo:** permitir criar e editar classificações na área de Receitas e Despesas.
 
@@ -234,7 +236,25 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 - Exibir o caminho da categoria no seletor e agregar pai/filhas sem duplicar valores.
 - Testar hierarquia, isolamento, duplicidade, edição e registros vinculados.
 
+### BW-18 — Integrar investimentos à API
+
+**Estado:** A estimar. O painel usa amostras locais; entidades e repositório existem em BW-03.
+
+**Origem:** o painel visual e a entidade/repositório foram desenvolvidos antes da integração financeira ponta a ponta.
+
+**Objetivo:** conectar o painel de investimentos ao usuário autenticado e à persistência já disponível em BW-03.
+
+**Critérios de aceite a refinar antes de iniciar:**
+
+- Definir o contrato de criação, consulta, edição e exclusão compatível com `InvestmentRepository` e as regras de categoria `INVESTMENT`.
+- Proteger as rotas com a sessão validada em BW-09 e provar isolamento entre dois usuários.
+- Trocar os dados locais do painel por dados da API; estados de carregamento, vazio, erro e sucesso devem refletir o servidor.
+- Calcular e rotular claramente valores projetados como estimativas; a taxa mensal e o prazo não equivalem a retorno garantido.
+- Cobrir conversões monetárias, validação, propriedade e projeção com testes focados.
+
 ### BW-13 — Planejar o mês e visualizar o calendário
+
+**Estado:** A refinar. Existe uma prévia visual local; os cálculos e a persistência não estão implementados.
 
 **Objetivo:** informar receitas esperadas, despesas fixas com datas e meta de economia para visualizar orçamento e gastos diários.
 
@@ -249,6 +269,8 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 - Testar início no meio do mês, arredondamento, mês sem orçamento e alteração de valores previstos.
 
 ### BW-14 — Redistribuir o orçamento entre dias
+
+**Estado:** A refinar. O comportamento ainda está em proposta de regra, sem redistribuição funcional.
 
 **Objetivo:** realocar sobras ou compensar excessos nos dias restantes, conforme escolha do usuário.
 
@@ -266,6 +288,8 @@ Implementar em incremento posterior, substituindo o acesso demonstrativo de BW-1
 **Decisão de stack:** backend HTTP com Express, registrada em [ADR 0003](decisions/0003-express-backend.md).
 
 **Objetivo:** disponibilizar uma aplicação executável para receber as telas e os casos de uso.
+
+**Estado:** Em andamento. A etapa de protótipo visual foi concluída intencionalmente: esqueleto React/Vite e Express, navegação com cinco painéis e suas experiências visuais permitem aos stakeholders avaliar a direção futura antes da integração. Dashboard, Transações, Categorias, Investimentos e Planejamento usam dados locais; filtros e interações ainda não persistem dados. A revisão visual independente aprovou a direção geral. Falta fechar a execução documentada do servidor e integrar progressivamente os fluxos financeiros com autenticação protegida.
 
 **Critérios de aceite:**
 
@@ -312,7 +336,7 @@ O schema de referência está em `prisma/schema.prisma`; esta tabela resume o qu
 
 | Entidade | Campos persistidos | Responsabilidade |
 | --- | --- | --- |
-| `User` | `id`, `name`, `email`, `username`, `passwordHash`, `createdAtTimestamp` | Proprietário dos dados. Autenticação real permanece em BW-09. |
+| `User` | `id`, `name`, `email`, `username`, `passwordHash`, `createdAtTimestamp` | Proprietário dos dados. Verificação do JWT e proteção por proprietário permanecem em BW-09. |
 | `TransactionCategory` | `id`, `label`, `type`, `parentId?`, `userId`, `isDefault` | Categorias próprias do usuário, com hierarquia de raiz e subcategoria direta; sinaliza categorias padrão protegidas pelas regras do domínio. |
 | `Transaction` | `id`, `categoryId`, `amountCents`, `dateTimestamp`, `userId`, `description?` | Receita ou despesa associada a categoria e proprietário; o tipo é obtido da categoria. Datas e recorrências serão refinadas em BW-17. |
 | `Investment` | `id`, `categoryId`, `dateTimestamp`, `amountCents`, `monthlyRate`, `monthsDuration`, `userId`, `description?` | Persistência inicial de investimento; interface e fluxo completo continuam fora de BW-03. |
@@ -385,4 +409,4 @@ Reordenar esta lista após a primeira validação. Não criar agora tabelas ou s
 | Agente de IA | Quais consultas ou registros ele poderá propor, e como o usuário confirmará alterações? |
 | Exportação e recuperação | Como o usuário obterá uma cópia dos próprios dados? |
 
-**Próximo passo sugerido:** avançar para BW-15, preparando a aplicação web e a integração entre frontend e backend.
+**Próximo passo sugerido:** fechar o middleware JWT e o estado de sessão de BW-09; então implementar uma fatia vertical de transações (criar/listar por usuário e mês) em BW-04, incluindo validação, persistência, interface e testes. Depois avançar para resultado mensal (BW-05), correção/exclusão (BW-06) e integração de categorias (BW-12). Revisar os critérios de BW-15 ao completar a execução do servidor e o fluxo integrado.

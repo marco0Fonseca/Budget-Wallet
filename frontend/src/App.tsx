@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { CategoryWorkspace } from './CategoryWorkspace.tsx';
+import { TransactionWorkspace } from './TransactionWorkspace.tsx';
+import { InvestmentWorkspace } from './InvestmentWorkspace.tsx';
+import { DashboardWorkspace } from './DashboardWorkspace.tsx';
+import { PlanningWorkspace } from './PlanningWorkspace.tsx';
 
 const authTokenKey = 'budgetwallet-auth-token';
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -96,13 +101,14 @@ function readAuthenticatedSession() {
   return sessionStorage.getItem(authTokenKey) !== null;
 }
 
-type WorkspaceSection = 'Dashboard' | 'Transações' | 'Categorias' | 'Investimentos';
+type WorkspaceSection = 'Dashboard' | 'Transações' | 'Categorias' | 'Investimentos' | 'Planejamento diário';
 
 const workspaceNav: { label: WorkspaceSection; icon: IconName }[] = [
   { label: 'Dashboard', icon: 'home' },
   { label: 'Transações', icon: 'transfer' },
   { label: 'Categorias', icon: 'tag' },
   { label: 'Investimentos', icon: 'investment' },
+  { label: 'Planejamento diário', icon: 'calendar' },
 ];
 
 function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSignOut, logoutButtonRef, cancelLogoutButtonRef }: {
@@ -115,11 +121,15 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
 }) {
   const [activeSection, setActiveSection] = useState<WorkspaceSection>('Dashboard');
   const [chatOpen, setChatOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('2026-11');
+  const selectedMonthDate = new Date(`${selectedMonth}-01T12:00:00`);
+  const selectedMonthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(selectedMonthDate);
   const sectionTitles: Record<WorkspaceSection, string> = {
     Dashboard: 'Dashboard',
     Transações: 'Transações',
     Categorias: 'Categorias',
     Investimentos: 'Investimentos',
+    'Planejamento diário': 'Planejamento diário',
   };
 
   return (
@@ -155,7 +165,7 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
           <header className="workspace-topbar">
             <div className="workspace-mobile-brand"><span className="workspace-brand-icon"><Icon name="wallet" size={19} /></span><strong>BudgetWallet</strong></div>
             <div className="workspace-topbar-right">
-              <label className="month-select"><Icon name="calendar" size={17} /><span className="sr-only">Mês</span><select defaultValue="2026-11"><option value="2026-11">Novembro de 2026</option><option value="2026-10">Outubro de 2026</option><option value="2026-09">Setembro de 2026</option></select></label>
+              <label className="month-select"><Icon name="calendar" size={17} /><span className="sr-only">Mês</span><select value={selectedMonth} onChange={event => setSelectedMonth(event.target.value)}><option value="2026-11">Novembro de 2026</option><option value="2026-10">Outubro de 2026</option><option value="2026-09">Setembro de 2026</option></select></label>
               <button ref={logoutButtonRef} className="workspace-signout" type="button" onClick={onRequestSignOut} aria-haspopup="dialog">Sair</button>
             </div>
           </header>
@@ -163,10 +173,10 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
           <div className="workspace-content">
             <div className="workspace-page-heading">
               <div><span className="eyebrow">SEU ESPAÇO FINANCEIRO</span><h1>{sectionTitles[activeSection]}</h1></div>
-              <span className="workspace-date">Novembro, 2026</span>
+              <span className="workspace-date">{selectedMonthLabel}</span>
             </div>
 
-            {activeSection !== 'Dashboard' && <WorkspacePlaceholder section={activeSection} />}
+            {activeSection === 'Dashboard' ? <DashboardWorkspace selectedMonth={selectedMonth} onNavigate={setActiveSection} /> : <WorkspacePlaceholder section={activeSection} selectedMonth={selectedMonth} />}
           </div>
         </section>
         <button className="ai-chat-trigger" type="button" onClick={() => setChatOpen(open => !open)} aria-haspopup="dialog" aria-expanded={chatOpen} aria-label={chatOpen ? 'Fechar chat do assistente' : 'Abrir chat do assistente'}>
@@ -192,31 +202,20 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
   );
 }
 
-function WorkspacePlaceholder({ section }: { section: Exclude<WorkspaceSection, 'Dashboard'> }) {
+function WorkspacePlaceholder({ section, selectedMonth }: { section: Exclude<WorkspaceSection, 'Dashboard'>; selectedMonth: string }) {
   if (section === 'Transações') {
-    return (
-      <div className="workspace-section-content">
-        <div className="section-toolbar"><div><span className="eyebrow">RECEITAS E DESPESAS</span><h2>Movimentações</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Nova transação</button></div>
-        <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="transfer" size={26} /></span><h2>Suas transações aparecerão aqui</h2><p>A lista e os filtros por período e tipo serão conectados ao serviço de movimentações na próxima etapa.</p><span className="coming-soon-badge">Integração pendente</span></section>
-      </div>
-    );
+    return <TransactionWorkspace selectedMonth={selectedMonth} />;
   }
 
   if (section === 'Categorias') {
-    return (
-      <div className="workspace-section-content">
-        <div className="section-toolbar"><div><span className="eyebrow">ORGANIZAÇÃO</span><h2>Suas categorias</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Nova categoria</button></div>
-        <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="tag" size={26} /></span><h2>Gerencie suas categorias</h2><p>As categorias padrão e as personalizadas serão exibidas aqui, com opção de organizar subcategorias.</p><span className="coming-soon-badge">Integração pendente</span></section>
-      </div>
-    );
+    return <CategoryWorkspace />;
   }
 
-  return (
-    <div className="workspace-section-content">
-      <div className="section-toolbar"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Carteira de investimentos</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Novo investimento</button></div>
-      <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="investment" size={26} /></span><h2>Seus investimentos ficarão reunidos aqui</h2><p>O painel mostrará seus aportes e projeções quando a interface for conectada ao repositório de investimentos.</p><span className="coming-soon-badge">Integração pendente</span></section>
-    </div>
-  );
+  if (section === 'Planejamento diário') {
+    return <PlanningWorkspace selectedMonth={selectedMonth} />;
+  }
+
+  return <InvestmentWorkspace />;
 }
 
 export function App() {
