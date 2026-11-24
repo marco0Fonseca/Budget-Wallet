@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import type { ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import { registerAuthenticationRoutes } from './services/autheticationService.ts';
+import { registerCategoriesRoutes } from './services/categoriesService.ts';
 
 const app = express();
 const PORT = 5000;
@@ -29,11 +30,14 @@ const data = {
       auth: {
         'POST /api/auth/signup': 'Create a new user account (Body: { name: string, email: string, username: string, password: string, confirmPassword: string })',
         'POST /api/auth/signin': 'Authenticate with { identifier, password }; returns a JWT on success',
-        'POST /api/auth/recover': 'Temporarily reset a password using { identifier, newPassword, confirmPassword }',
-      },
-      users: {
+        'POST /api/auth/recover': 'Reset a password using { identifier, newPassword, confirmPassword }'
       },
       categories: {
+        'GET /api/categories': 'Get categories for the authenticated user (Authorization: Bearer <token>)',
+        'POST /api/categories': 'Create a category for the authenticated user (Authorization: Bearer <token>)',
+        'PATCH /api/categories/:id': 'Update a custom category owned by the authenticated user (Authorization: Bearer <token>)',
+        'GET /api/categories/:id/deletion-status': 'Check whether a category can be deleted',
+        'DELETE /api/categories/:id': 'Delete an unused custom category',
       },
       transactions: {
       },
@@ -59,6 +63,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 registerAuthenticationRoutes(app);
+registerCategoriesRoutes(app);
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error('Unexpected API error:', error);

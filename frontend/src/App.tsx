@@ -4,8 +4,8 @@ import { TransactionWorkspace } from './TransactionWorkspace.tsx';
 import { InvestmentWorkspace } from './InvestmentWorkspace.tsx';
 import { DashboardWorkspace } from './DashboardWorkspace.tsx';
 import { PlanningWorkspace } from './PlanningWorkspace.tsx';
+import { apiBaseUrl, authTokenKey } from './api.ts';
 
-const authTokenKey = 'budgetwallet-auth-token';
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const percentFormatter = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 });
 const monthYearFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -173,7 +173,6 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
           <div className="workspace-content">
             <div className="workspace-page-heading">
               <div><span className="eyebrow">SEU ESPAÇO FINANCEIRO</span><h1>{sectionTitles[activeSection]}</h1></div>
-              <span className="workspace-date">{selectedMonthLabel}</span>
             </div>
 
             {activeSection === 'Dashboard' ? <DashboardWorkspace selectedMonth={selectedMonth} onNavigate={setActiveSection} /> : <WorkspacePlaceholder section={activeSection} selectedMonth={selectedMonth} />}
@@ -285,7 +284,7 @@ export function App() {
     setIsSigningIn(true);
     setErrors({});
     try {
-      const response = await fetch('http://localhost:5000/api/auth/signin', {
+      const response = await fetch(`${apiBaseUrl}/api/auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: identifier.trim(), password }),
@@ -369,7 +368,7 @@ export function App() {
     const body = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
+      const response = await fetch(`${apiBaseUrl}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -395,7 +394,7 @@ export function App() {
     const body = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/recover', {
+      const response = await fetch(`${apiBaseUrl}/api/auth/recover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

@@ -63,6 +63,17 @@ export class InvestmentRepository {
         return investments.map(investment => this.toEntity(investment));
     }
 
+    async findAllByCategory(categoryId: number, userId: string): Promise<Investment[]> {
+        TransactionCategory.validateId(categoryId);
+        Investment.validateUserId(userId);
+        const investments = await prisma.investment.findMany({
+            where: { categoryId, userId },
+            orderBy: { id: 'asc' },
+            include: { category: true },
+        });
+        return investments.map(investment => this.toEntity(investment));
+    }
+
     async updateAmountCents(id: number, userId: string, newAmountCents: number): Promise<Investment> {
         Investment.validateId(id);
         Investment.validateUserId(userId);

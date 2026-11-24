@@ -15,7 +15,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 - Uma categoria por lançamento.
 - Categorias editáveis, com subcategorias e opções iniciais sugeridas em [Regras de negócio](BUSINESS-RULES.md). O mesmo documento detalha a proposta do calendário, meta de economia e redistribuição do orçamento diário para incremento posterior.
 - O resultado mensal é receitas menos despesas do período; não representa saldo bancário.
-- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. Ainda faltam verificação do JWT em rotas privadas e isolamento financeiro por usuário. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
+- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. O middleware protege a listagem de categorias; falta aplicá-lo às demais rotas financeiras e completar os testes de isolamento. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
 
 ## Como trabalhar com este backlog
 
@@ -29,7 +29,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders; não se esperava que os painéis já estivessem integrados ao backend. BW-15 segue **Em andamento** para fechar a execução documentada do servidor e a aplicação integrada. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam, mas ainda faltam proteção de rotas e recuperação segura. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue. Próxima fase: finalizar sessão protegida e iniciar a integração vertical das funcionalidades financeiras.
+BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders; não se esperava que os painéis já estivessem integrados ao backend. BW-15 segue **Em andamento** para fechar a execução documentada do servidor e a aplicação integrada. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam e o middleware já protege a listagem de categorias; falta ampliar a proteção às demais rotas e concluir a recuperação segura. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue. Próxima fase: ampliar a sessão protegida e iniciar a integração vertical das funcionalidades financeiras.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
@@ -193,7 +193,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 **Trabalho:** verificar JWT nas rotas privadas e usar a identidade validada para autorizar acesso aos dados do usuário.
 
-**Estado:** Parcial. Login valida credenciais e emite JWT; a interface mantém o token na sessão do navegador. Ainda não há middleware verificando JWT nem rotas financeiras protegidas ou testes de isolamento.
+**Estado:** Parcial. Login emite JWT e a interface mantém o token na sessão do navegador. O middleware verifica tokens na listagem de categorias e impede acesso a outro `userId`; faltam aplicar a proteção às demais rotas financeiras quando forem criadas e completar a cobertura de isolamento exigida pelos critérios.
 
 O método definido é e-mail ou username e senha. Esta proteção é pré-requisito para expor dados financeiros por API.
 
@@ -224,7 +224,7 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 
 ### BW-12 — Gerenciar categorias e subcategorias
 
-**Estado:** A iniciar. A tela de Categorias tem busca, filtros e seleção locais; CRUD ainda não está conectado à API.
+**Estado:** Parcial. A tela carrega categorias pela API, cria categorias personalizadas e edita nome, tipo e categoria principal pelo mesmo formulário; após salvar, atualiza a lista com a hierarquia retornada pelo servidor. A exclusão de categoria personalizada exige confirmação e é bloqueada quando há subcategorias, transações ou investimentos vinculados. Categorias padrão são protegidas. Busca e filtros são locais. Arquivamento, reclassificação antes de exclusão e validação de nomes entre irmãs permanecem pendentes.
 
 **Objetivo:** permitir criar e editar classificações na área de Receitas e Despesas.
 

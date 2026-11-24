@@ -4,7 +4,7 @@ Documento evolutivo dos percursos, telas, ações e respostas visíveis ao usuá
 
 ## Navegação definida
 
-Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Dashboard e os quatro painéis têm prévias visuais com dados locais. Somente as rotas de autenticação estão conectadas à API; os fluxos financeiros ainda aguardam rotas e persistência.
+Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. A tela Categorias carrega a lista real da conta pela API protegida e permite criar, editar e excluir categorias personalizadas sem vínculos; Dashboard, Transações, Investimentos e Planejamento diário ainda usam prévias locais.
 
 ```mermaid
 flowchart TD
@@ -37,7 +37,7 @@ A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo 
 | Login | Entrar no Dashboard | Login, cadastro e recuperação provisória usam rotas da API. O login retorna JWT. A recuperação ainda aceita apenas identificador e senha nova, sem prova de posse da conta; não é segura para uso compartilhado ou real. |
 | Dashboard | Entender rapidamente o mês | Resumo local de receitas, despesas e resultado do período, despesas por categoria, últimos lançamentos e carteira estimada. Os atalhos levam aos painéis correspondentes; os dados aguardam integração com a API. |
 | Transações | Registrar e consultar movimentações | Prévia local com resumo mensal, busca, filtros por tipo, lista por data e painel de detalhes do lançamento selecionado. Criação, edição, exclusão e dados da conta aguardam integração com a API. O período vem do seletor global no topo. |
-| Categorias | Organizar classificações | Prévia local das categorias padrão e de duas subcategorias de exemplo. Busca por nome, filtros de tipo, hierarquia e origem e rolagem de cada painel funcionam no navegador. Criação, edição, exclusão e carregamento dos dados da conta aguardam integração. |
+| Categorias | Organizar classificações | Carrega as categorias da conta pela API e abre um modal para criar categorias principais ou subcategorias. O lápis abre o formulário preenchido para edição. A lixeira abre uma confirmação ou informa que existem subcategorias, transações ou investimentos vinculados; só categorias personalizadas sem vínculos podem ser excluídas nesta etapa. Busca e filtros funcionam localmente. |
 | Investimentos | Consultar e acompanhar investimentos | Prévia local com resumo da carteira, evolução estimada e lista de aportes. Selecionar um item abre seus dados e o progresso do prazo; comparação de projeções fica para incremento posterior. Criação, edição, exclusão e dados da conta aguardam integração com a API. |
 | Planejamento diário | Planejar e acompanhar a evolução do mês | Prévia local com calendário, receita prevista, despesas fixas, meta para guardar, orçamento diário e resumo do dia selecionado. Edição e redistribuição ainda aguardam definição completa das regras e integração. Consulte `BUSINESS-RULES.md`. |
 
@@ -87,9 +87,9 @@ Este é o fluxo de produto esperado para BW-04/05/06, não um fluxo já entregue
 Comportamentos esperados após a integração:
 
 - Login, cadastro e recuperação fazem chamadas às rotas de autenticação. Credenciais inválidas e erros da API são apresentados ao usuário.
-- Após login válido, o JWT fica na sessão do navegador; as telas visuais ainda não usam esse token em rotas financeiras porque elas não existem.
+- Após login válido, o JWT fica na sessão do navegador. A tela Categorias usa o token na listagem protegida; as demais telas financeiras ainda não têm rotas integradas.
 - Sair limpa a sessão e retorna ao login.
-- O backend ainda não valida JWT em rotas privadas nem aplica isolamento financeiro por usuário; essas proteções seguem pendentes em BW-09.
+- O middleware JWT protege a listagem de categorias e impede acesso a outro usuário. As demais rotas financeiras ainda não existem; a proteção abrangente e os testes de isolamento seguem pendentes em BW-09.
 - Mês sem lançamentos mostra totais zerados e orientação para cadastrar a primeira movimentação.
 - Erro ao salvar mantém o formulário disponível para correção ou nova tentativa, sem indicar sucesso.
 - A navegação autenticada ainda não implementa operações financeiras; ações desabilitadas e dados de exemplo indicam que a integração está pendente.
@@ -126,7 +126,7 @@ Amanhã    R$ 50,00               —                  —
 - O front tem navegação para cinco áreas, prévias locais dos painéis financeiros e interações visuais de busca, filtros, seleção e calendário.
 - Cadastro e login chamam a API e o cadastro cria categorias padrão. A recuperação por identificador está implementada apenas como fluxo provisório de desenvolvimento.
 - BW-04 a BW-06 seguem pendentes: criar rotas financeiras, integrar transações e persistir consultas, correções e exclusões.
-- BW-12 segue pendente de API e integração para gerir categorias pela tela. Repositório e domínio já existem.
+- BW-12 está parcial: criação, edição e exclusão de categorias sem vínculos usam a API; arquivamento e reclassificação antes de excluir categorias em uso ainda estão pendentes.
 - BW-13/BW-14 seguem pendentes de regras finais e implementação persistente; a prévia de Planejamento diário não os conclui.
 - BW-09 segue parcial: falta validação de JWT em rotas protegidas, autorização e testes de isolamento por proprietário; recuperar senha requer prova de posse da conta antes de uso real.
 

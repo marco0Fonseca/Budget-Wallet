@@ -33,7 +33,7 @@ O projeto será desenvolvido utilizando:
 - **Node.js / npm**
 - **Vercel**
 
-O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. Login, cadastro e recuperação provisória de senha já se comunicam com a API. Após o login, a área autenticada oferece navegação lateral para Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Os painéis financeiros apresentam exemplos locais; navegação, busca, filtros e seleção são interativos, mas os dados da conta e as operações ainda aguardam integração com a API. O chat de IA é apenas visual. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
+O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. Login, cadastro e recuperação provisória de senha já se comunicam com a API. Após o login, a área autenticada oferece navegação lateral para Dashboard, Transações, Categorias, Investimentos e Planejamento diário. A tela de Categorias busca as categorias da conta e permite criar categorias personalizadas pela API; as outras telas financeiras ainda usam exemplos locais e suas operações aguardam integração. O chat de IA é apenas visual. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 
@@ -64,7 +64,7 @@ Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de e
 
 Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
 
-Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A área autenticada tem navegação lateral entre Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Os painéis financeiros usam exemplos locais; navegação, busca, filtros e seleção são interativos, mas os dados da conta e as operações ainda não estão conectados à API. O chat de IA é apenas visual. A recuperação atual permite redefinir a senha por identificador e ainda não comprova posse da conta. Os painéis financeiros do login são ilustrações.
+Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A tela de Categorias consulta `GET /api/categories`, cria por `POST /api/categories`, edita por `PATCH /api/categories/:id` e verifica/exclui categorias sem vínculos por `GET /api/categories/:id/deletion-status` e `DELETE /api/categories/:id`; os demais painéis financeiros ainda usam exemplos locais. O chat de IA é apenas visual. A recuperação atual permite redefinir a senha por identificador e ainda não comprova posse da conta. Os painéis financeiros do login são ilustrações.
 
 ## Automação de navegador
 

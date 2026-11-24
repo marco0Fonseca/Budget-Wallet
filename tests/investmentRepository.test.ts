@@ -105,6 +105,19 @@ test('persists investments and queries only the requested owners records', async
     await assert.rejects(() => investments.create(a.investment), /Only new investments/);
 });
 
+test('finds investments by category without including another category or user', async (t) => {
+    const a = await fixture(t, 'category.search.a');
+    const b = await fixture(t, 'category.search.b');
+    const second = await investments.create(new Investment(
+        -1, a.secondCategory, 1795000000123, 5000, 0.01, 6, a.user.id,
+    ));
+    assert.deepStrictEqual(await investments.findAllByCategory(a.category.id, a.user.id), [a.investment]);
+    assert.deepStrictEqual(await investments.findAllByCategory(a.secondCategory.id, a.user.id), [second]);
+    assert.deepStrictEqual(await investments.findAllByCategory(a.category.id, b.user.id), []);
+    assert.deepStrictEqual(await investments.findAllByCategory(2147483647, a.user.id), []);
+    await assert.rejects(() => investments.findAllByCategory(-1, a.user.id), /identifier/);
+});
+
 test('updates investment fields, clears descriptions and deletes without affecting another owner', async (t) => {
     const a = await fixture(t, 'updates.a');
     const b = await fixture(t, 'updates.b');

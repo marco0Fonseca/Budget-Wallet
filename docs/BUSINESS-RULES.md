@@ -15,7 +15,7 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 - O cadastro recebe nome, e-mail, username, senha e confirmação; a API valida os campos, armazena hash e cria categorias padrão individuais.
 - O login aceita e-mail ou username e valida a senha; em caso de sucesso, emite JWT, mantido pela interface na sessão do navegador.
-- A emissão de JWT já existe, mas o servidor ainda não verifica o token em rotas privadas. Até implementar middleware e autorização, não considerar os dados financeiros isolados nem expor operações financeiras como protegidas.
+- O servidor verifica JWT por middleware na rota de listagem de categorias e confere se o usuário autenticado corresponde ao recurso solicitado. A proteção de outras rotas financeiras deve seguir o mesmo padrão; até então, não considerar toda a API financeira protegida.
 - A recuperação provisória redefine a senha por e-mail ou username sem comprovar a posse da conta e revela se o identificador existe. É apenas para desenvolvimento local; antes de uso compartilhado ou real, exigir token temporário e de uso único enviado ao e-mail verificado, além de resposta que não revele a existência da conta. Detalhes em `AUTHENTICATION.md`.
 - Os painéis financeiros atuais usam dados locais de exemplo. Quando forem integrados, categorias, lançamentos e planejamento devem pertencer ao usuário da sessão verificada; nunca confiar em `userId` enviado pelo cliente.
 
@@ -57,6 +57,8 @@ Usar a entidade `TransactionCategory`, com `parentId` opcional apontando para um
 O catálogo inicial aprovado contém 21 categorias. Todas são raízes (`parentId: null`), são copiadas por usuário e recebem `isDefault: true`. O repositório inclui `createDefaultCategoriesForUser(userId)` para persistir a cópia individual; o fluxo atual de cadastro no servidor chama essa rotina após criar a conta.
 
 O campo `isDefault` é `false` para categorias personalizadas. Edição e exclusão devem bloquear categorias padrão, inclusive alterações de nome, tipo, pai e do próprio indicador. Esse indicador é definido pelo servidor, não por dados livres enviados pelo cliente. A exclusão da conta continua removendo todas as categorias em cascata. `updateLabel`, `updateType`, `updateParent` e `delete` já verificam a proteção. A exclusão isolada exige categoria do próprio usuário, não padrão e sem subcategorias; vínculos com transações ou investimentos também impedem a exclusão pelo banco.
+
+Em uma etapa futura, uma categoria usada por transações poderá ser excluída depois que o usuário escolher outra categoria compatível para receber esses lançamentos. A reclassificação e a exclusão deverão ocorrer de forma consistente. Investimentos vinculados também exigirão uma política explícita antes de permitir essa operação.
 
 A alteração de tipo só pode partir de uma categoria raiz e deve atualizar também suas subcategorias diretas em uma única transação. É bloqueada se qualquer categoria envolvida for padrão ou tiver transações ou investimentos vinculados. A criação pelo repositório só aceita pai existente, do mesmo usuário e tipo, cujo parentId seja nulo. Assim, o limite de dois níveis é validado na entrada, e updateType trata apenas a raiz e suas filhas diretas. Escritas diretas no banco não recebem essa validação de profundidade. Para respeitar a chave estrangeira composta com `onUpdate: Restrict`, o repositório desvincula temporariamente as filhas, altera os tipos e restaura os vínculos dentro da mesma transação; qualquer falha desfaz todas as etapas.
 
