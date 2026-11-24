@@ -64,7 +64,7 @@ Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de e
 
 Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
 
-Para ver a tela de login, execute `npm run dev:frontend` e abra o endereço exibido pelo Vite. No ambiente local, qualquer identificador e senha não vazios permitem entrar na página vazia do Dashboard. O acesso demonstrativo não valida credenciais, não cria contas e não salva a senha. O formulário de cadastro e a rota de signup estão em desenvolvimento; recuperação de senha ainda é apenas visual. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações. O acesso demonstrativo fica indisponível no build de produção até a autenticação real ser implementada.
+Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. O login valida e-mail ou username e senha pela rota `POST /api/auth/signin`; no sucesso, a interface mantém o JWT na sessão do navegador e abre a página vazia do Dashboard. O cadastro e a recuperação estão em desenvolvimento; a redefinição atual ainda é provisória e não comprova posse da conta. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações.
 
 ## Automação de navegador
 

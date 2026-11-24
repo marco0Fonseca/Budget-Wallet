@@ -28,6 +28,8 @@ const data = {
     endpoints: {
       auth: {
         'POST /api/auth/signup': 'Create a new user account (Body: { name: string, email: string, username: string, password: string, confirmPassword: string })',
+        'POST /api/auth/signin': 'Authenticate with { identifier, password }; returns a JWT on success',
+        'POST /api/auth/recover': 'Temporarily reset a password using { identifier, newPassword, confirmPassword }',
       },
       users: {
       },

@@ -115,7 +115,7 @@ test('returns null for queries and rejects updates when the user does not exist'
     await assert.rejects(() => userRepository.updateUsername(id, 'updated.user'), { code: 'P2025' });
 
     const passwordHash = await hashPassword('updatedPassword');
-    await assert.rejects(() => userRepository.updatePasswordHash(id, passwordHash), { code: 'P2025' });
+    assert.equal(await userRepository.updatePasswordHashByIdentifier(email, passwordHash), null);
 });
 
 test('persists profile updates and preserves the other user fields', async (t) => {
@@ -179,7 +179,7 @@ test('persists a new password hash and exposes it only through the authenticatio
     const newHash = await hashPassword('newPassword');
     assert.notEqual(newHash, oldHash);
 
-    const updated = await userRepository.updatePasswordHash(user.id, newHash);
+    const updated = await userRepository.updatePasswordHashByIdentifier(user.username, newHash);
     const authentication = await userRepository.findUserByEmailWithPassword(user.email);
     assert.deepStrictEqual(authentication, { user, passwordHash: newHash });
 

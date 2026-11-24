@@ -16,6 +16,7 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 - No protótipo local, qualquer e-mail ou username e senha não vazios permitem entrar, sem validar credenciais nem exigir formato de e-mail.
 - Identificadores diferentes usam o mesmo usuário demonstrativo com dados fictícios; não criam contas ou identidades verificadas. Não persistir nem registrar a senha informada.
 - Autenticação real, cadastro e recuperação de senha entram posteriormente em BW-09/BW-11, antes de uso real.
+- A redefinição provisória por e-mail ou username não comprova a posse da conta e não deve ser exposta em ambiente compartilhado ou produção. Antes do uso real, exigir token temporário, de uso único, enviado ao e-mail verificado; detalhes em `AUTHENTICATION.md`.
 - No acesso real, categorias, lançamentos e planejamento pertencem ao usuário autenticado. A identidade vem da sessão validada; outro usuário não pode consultar nem modificar esses dados.
 
 ## Perfil do usuário

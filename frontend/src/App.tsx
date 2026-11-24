@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
-const demoSessionKey = 'budgetwallet-demo-session';
+const authTokenKey = 'budgetwallet-auth-token';
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const percentFormatter = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 });
 const monthYearFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -66,7 +66,7 @@ function PreviewPanels() {
 
       <div className="preview-investment preview-card">
         <div className="preview-heading"><span className="preview-heading-icon"><Icon name="trend" size={22} /></span><strong>Investimentos</strong></div>
-        <p>Variação ilustrativa</p><strong className="investment-number">+ {percentFormatter.format(0.0834)}</strong>
+        <p></p><strong className="investment-number">+ {percentFormatter.format(0.0834)}</strong>
         <svg className="investment-curve" viewBox="0 0 240 72" preserveAspectRatio="none"><path d="M0 66C20 59 20 48 40 54S66 62 82 45s28 7 46-9 20 3 42-13 28 5 44-11 20-9 26-12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>
       </div>
 
@@ -85,24 +85,33 @@ function PreviewPanels() {
   );
 }
 
-function readDemoSession() {
-  return import.meta.env.DEV && sessionStorage.getItem(demoSessionKey) === '1';
+function readAuthenticatedSession() {
+  return sessionStorage.getItem(authTokenKey) !== null;
 }
 
 export function App() {
-  const [entered, setEntered] = useState(readDemoSession);
+  const [entered, setEntered] = useState(readAuthenticatedSession);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [showConfirmedPassword, setShowConfirmedPassword] = useState(false);
+  const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
+  const [showRecoveryConfirmation, setShowRecoveryConfirmation] = useState(false);
   const [signupSucceeded, setSignupSucceeded] = useState(false);
+  const [recoverySucceeded, setRecoverySucceeded] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [errors, setErrors] = useState<LoginErrors>({});
   const identifierRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const createFormRef = useRef<HTMLFormElement>(null);
   const createPasswordRef = useRef<HTMLInputElement>(null);
   const confirmedPasswordRef = useRef<HTMLInputElement>(null);
+  const recoveryPasswordRef = useRef<HTMLInputElement>(null);
+  const recoveryConfirmationRef = useRef<HTMLInputElement>(null);
+  const logoutButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelLogoutButtonRef = useRef<HTMLButtonElement>(null);
   const loginView = readLoginView();
 
   useEffect(() => {
@@ -120,7 +129,21 @@ export function App() {
     return () => window.removeEventListener('popstate', normalizeRoute);
   }, [entered]);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (!showLogoutDialog) return;
+
+    cancelLogoutButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowLogoutDialog(false);
+        logoutButtonRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showLogoutDialog]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: LoginErrors = {};
     if (!identifier.trim()) nextErrors.identifier = 'Informe seu e-mail ou username.';
@@ -130,15 +153,34 @@ export function App() {
       (nextErrors.identifier ? identifierRef : passwordRef).current?.focus();
       return;
     }
-    if (!import.meta.env.DEV) {
-      setErrors({ form: 'O acesso demonstrativo está disponível apenas no ambiente local.' });
-      return;
-    }
-    sessionStorage.setItem(demoSessionKey, '1');
-    setPassword('');
+    setIsSigningIn(true);
     setErrors({});
-    setEntered(true);
-    history.pushState(null, '', '/dashboard');
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
+      });
+      const result: { error?: string; token?: string } = await response.json();
+
+      if (!response.ok) {
+        setErrors({ form: result.error ?? 'Não foi possível entrar. Confira seus dados e tente novamente.' });
+        return;
+      }
+      if (typeof result.token !== 'string' || result.token.length === 0) {
+        setErrors({ form: 'O servidor não retornou um token de acesso válido.' });
+        return;
+      }
+
+      sessionStorage.setItem(authTokenKey, result.token);
+      setPassword('');
+      setEntered(true);
+      history.pushState(null, '', '/dashboard');
+    } catch {
+      setErrors({ form: 'Não foi possível conectar ao servidor. Verifique se a API está em execução e tente novamente.' });
+    } finally {
+      setIsSigningIn(false);
+    }
   }
 
   function clearFieldError(field: 'identifier' | 'password') {
@@ -151,7 +193,8 @@ export function App() {
   }
 
   function signOut() {
-    sessionStorage.removeItem(demoSessionKey);
+    setShowLogoutDialog(false);
+    sessionStorage.removeItem(authTokenKey);
     setIdentifier('');
     setPassword('');
     setShowPassword(false);
@@ -181,6 +224,15 @@ export function App() {
     );
   }
 
+  function validateRecoveryPasswordConfirmation() {
+    const newPassword = recoveryPasswordRef.current;
+    const confirmation = recoveryConfirmationRef.current;
+    if (!newPassword || !confirmation) return;
+    confirmation.setCustomValidity(
+      confirmation.value && confirmation.value !== newPassword.value ? 'As senhas não coincidem.' : '',
+    );
+  }
+
   async function submitCreateAccount(event: FormEvent<HTMLFormElement>){
     event.preventDefault();
 
@@ -207,8 +259,56 @@ export function App() {
     }
   }
 
+  async function submitPasswordRecovery(event: FormEvent<HTMLFormElement>){
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const body = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (response.status === 200) {
+        setRecoverySucceeded(true);
+        window.setTimeout(() => window.location.assign('/'), 3000);
+        return;
+      }
+
+      const result: { error?: string } = await response.json();
+      window.alert(result.error ?? 'Não foi possível redefinir sua senha. Tente novamente.');
+    } catch {
+      window.alert('Não foi possível conectar ao servidor. Verifique se a API está em execução e tente novamente.');
+    }
+  }
+
   if (entered) {
-    return <div className="dashboard-placeholder"><header><Brand /><button className="sign-out" type="button" onClick={signOut}>Sair</button></header><main id="dashboard-main" tabIndex={-1}><h1>Dashboard</h1></main></div>;
+    return (
+      <div className="dashboard-placeholder">
+        <header>
+          <Brand />
+          <button ref={logoutButtonRef} className="sign-out" type="button" onClick={() => setShowLogoutDialog(true)} aria-haspopup="dialog">Sair</button>
+        </header>
+        <main id="dashboard-main" tabIndex={-1}><h1>Dashboard</h1></main>
+        {showLogoutDialog && (
+          <div className="logout-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setShowLogoutDialog(false); }}>
+            <section className="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title" aria-describedby="logout-dialog-description">
+              <div className="logout-dialog-copy">
+                <h2 id="logout-dialog-title">Sair da sua conta?</h2>
+                <p id="logout-dialog-description">Você precisará entrar novamente para acessar sua conta.</p>
+              </div>
+              <div className="logout-dialog-actions">
+                <button ref={cancelLogoutButtonRef} className="logout-cancel" type="button" onClick={() => { setShowLogoutDialog(false); logoutButtonRef.current?.focus(); }}>Cancelar</button>
+                <button className="logout-confirm" type="button" onClick={signOut}>Sair</button>
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -225,7 +325,7 @@ export function App() {
                 <div className="field password-field"><label htmlFor="password">Senha</label><div className="input-wrap"><Icon name="lock" /><input ref={passwordRef} id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Digite sua senha…" value={password} onChange={event => { setPassword(event.target.value); clearFieldError('password'); }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'password-error' : undefined} /><button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}><Icon name={showPassword ? 'eyeOff' : 'eye'} /></button></div>{errors.password && <p className="field-error" id="password-error" role="alert">{errors.password}</p>}</div>
                 <div className="recover-row"><a className="text-button" href="/?view=recover">Esqueceu a senha?</a></div>
                 {errors.form && <p className="form-error" role="alert">{errors.form}</p>}
-                <button className="submit-button" type="submit">Entrar</button>
+                <button className="submit-button" type="submit" disabled={isSigningIn}>{isSigningIn ? 'Entrando…' : 'Entrar'}</button>
               </form>
               <p className="signup-prompt">Ainda não tem conta? <a className="text-button" href="/?view=create">Criar conta</a></p>
             </div>
@@ -277,8 +377,41 @@ export function App() {
             </form>
             </div>
           ) : (
-            <div className='login-content recover-password'>
-
+            <div className="login-content recover-password">
+              {recoverySucceeded ? (
+                <div className="signup-success" role="status" aria-live="polite">
+                  <span className="signup-success-icon"><Icon name="success" size={34} /></span>
+                  <h1 id="login-title" tabIndex={-1}>Senha redefinida com sucesso</h1>
+                  <p className="login-intro">Você será redirecionado ao login em instantes.</p>
+                </div>
+              ) : <>
+              <div className="create-heading">
+                <button className="back-button" type="button" onClick={() => window.location.assign('/')} aria-label="Voltar ao login" title="Voltar ao login"><Icon name="back" size={21} /></button>
+                <h1 id="login-title" tabIndex={-1}>Redefinir senha</h1>
+              </div>
+              <p className="login-intro">Informe o e-mail ou username da sua conta e escolha uma nova senha.</p>
+              <form onSubmit={submitPasswordRecovery}>
+                <div className="field">
+                  <label htmlFor="recovery-identifier">E-mail ou username</label>
+                  <input id="recovery-identifier" name="identifier" type="text" autoComplete="username" required />
+                </div>
+                <div className="field">
+                  <label htmlFor="recovery-password">Nova senha</label>
+                  <div className="create-password-wrap">
+                    <input ref={recoveryPasswordRef} id="recovery-password" name="newPassword" type={showRecoveryPassword ? 'text' : 'password'} autoComplete="new-password" onInput={validateRecoveryPasswordConfirmation} required />
+                    <button className="password-toggle" type="button" onClick={() => setShowRecoveryPassword(value => !value)} aria-label={showRecoveryPassword ? 'Ocultar nova senha' : 'Mostrar nova senha'} aria-pressed={showRecoveryPassword}><Icon name={showRecoveryPassword ? 'eyeOff' : 'eye'} /></button>
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="recovery-confirm-password">Confirmar nova senha</label>
+                  <div className="create-password-wrap">
+                    <input ref={recoveryConfirmationRef} id="recovery-confirm-password" name="confirmPassword" type={showRecoveryConfirmation ? 'text' : 'password'} autoComplete="new-password" onInput={validateRecoveryPasswordConfirmation} required />
+                    <button className="password-toggle" type="button" onClick={() => setShowRecoveryConfirmation(value => !value)} aria-label={showRecoveryConfirmation ? 'Ocultar confirmação da senha' : 'Mostrar confirmação da senha'} aria-pressed={showRecoveryConfirmation}><Icon name={showRecoveryConfirmation ? 'eyeOff' : 'eye'} /></button>
+                  </div>
+                </div>
+                <button className="submit-button" type="submit">Confirmar redefinição</button>
+              </form>
+              </>}
             </div>
           )}
           {loginView === 'login' && <>

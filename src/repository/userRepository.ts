@@ -71,6 +71,26 @@ export class UserRepository {
         return { user, passwordHash: userData.passwordHash };
     }
 
+    async findUserByIdentifierWithPassword(identifier: string): Promise<{ user: User; passwordHash: string } | null> {
+        if (typeof identifier !== 'string' || identifier.trim().length === 0) {
+            throw new Error('Email or username is required.');
+        }
+
+        const normalizedIdentifier = identifier.trim();
+        const userData = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: normalizedIdentifier },
+                    { username: normalizedIdentifier },
+                ],
+            },
+        });
+
+        if (!userData) return null;
+
+        return { user: this.toEntity(userData), passwordHash: userData.passwordHash };
+    }
+
     async updateName(id: string, newName: string) : Promise<User> {
         const validatedName = User.validateName(newName);
 
@@ -104,13 +124,44 @@ export class UserRepository {
       return this.toEntity(userData);
     }
 
+    /*
+     * Keep the authenticated-account version for the future token-based recovery flow.
     async updatePasswordHash(id: string, newPasswordHash: string) : Promise<User> {
       const userData = await prisma.user.update({
-        where: { id : id },
-        data: { passwordHash: newPasswordHash }
+        where: { id },
+        data: { passwordHash: newPasswordHash },
       });
 
       return this.toEntity(userData);
+    }
+    */
+
+    async updatePasswordHashByIdentifier(identifier: string, newPasswordHash: string): Promise<User | null> {
+      if (typeof identifier !== 'string' || identifier.trim().length === 0) {
+        throw new Error('Email or username is required.');
+      }
+      if (typeof newPasswordHash !== 'string' || newPasswordHash.length === 0) {
+        throw new Error('Password hash is required.');
+      }
+
+      const normalizedIdentifier = identifier.trim();
+      const userData = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: normalizedIdentifier },
+            { username: normalizedIdentifier },
+          ],
+        },
+      });
+
+      if (!userData) return null;
+
+      const updatedUserData = await prisma.user.update({
+        where: { id: userData.id },
+        data: { passwordHash: newPasswordHash },
+      });
+
+      return this.toEntity(updatedUserData);
     }
 
     async delete(id : string): Promise<User> {
