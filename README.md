@@ -33,7 +33,7 @@ O projeto será desenvolvido utilizando:
 - **Node.js / npm**
 - **Vercel**
 
-O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. A tela de login e uma página de destino vazia já funcionam localmente; a integração HTTP e o restante da aplicação continuam em BW-15. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
+O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. Login, cadastro e recuperação provisória de senha já se comunicam com a API. Após o login, a área autenticada oferece navegação lateral para Dashboard, Transações, Categorias e Investimentos; o conteúdo financeiro ainda aguarda implementação e integração com a API. O chat de IA é apenas visual. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 
@@ -64,7 +64,7 @@ Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de e
 
 Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
 
-Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. O login valida e-mail ou username e senha pela rota `POST /api/auth/signin`; no sucesso, a interface mantém o JWT na sessão do navegador e abre a página vazia do Dashboard. O cadastro e a recuperação estão em desenvolvimento; a redefinição atual ainda é provisória e não comprova posse da conta. Os painéis financeiros do login usam valores fictícios e são apenas ilustrações.
+Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A área autenticada tem navegação lateral entre Dashboard, Transações, Categorias e Investimentos. As telas financeiras ainda não estão implementadas nem conectadas aos repositórios; o chat de IA é apenas visual. A recuperação atual permite redefinir a senha por identificador e ainda não comprova posse da conta. Os painéis financeiros do login são ilustrações.
 
 ## Automação de navegador
 

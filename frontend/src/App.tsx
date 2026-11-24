@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 
 const authTokenKey = 'budgetwallet-auth-token';
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -17,7 +17,7 @@ function readLoginView(): LoginView {
   return view === 'create' || view === 'recover' ? view : 'login';
 }
 
-type IconName = 'wallet' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'chart' | 'calendar' | 'receipt' | 'trend' | 'arrowUp' | 'arrowDown' | 'equal' | 'restaurant' | 'market' | 'back' | 'success';
+type IconName = 'wallet' | 'mail' | 'lock' | 'eye' | 'eyeOff' | 'chart' | 'calendar' | 'receipt' | 'trend' | 'arrowUp' | 'arrowDown' | 'equal' | 'restaurant' | 'market' | 'back' | 'success' | 'home' | 'transfer' | 'tag' | 'investment' | 'message' | 'sparkle' | 'plus';
 
 function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -37,6 +37,13 @@ function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
     market: <><path d="M3 10h18l-2 10H5L3 10Z" /><path d="m8 10 4-7 4 7M9 14v3M15 14v3" /></>,
     back: <><path d="m14 5-7 7 7 7" /><path d="M7 12h14" /></>,
     success: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16.5 9" /></>,
+    home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v11h14V9M9 20v-6h6v6" /></>,
+    transfer: <><path d="M4 7h15l-3-3M20 17H5l3 3" /></>,
+    tag: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V4h9l8.6 8.6a.6.6 0 0 1 0 .8Z" /><circle cx="7.5" cy="8" r="1" /></>,
+    investment: <><path d="m3 17 6-6 4 3 8-9" /><path d="M15 5h6v6" /></>,
+    message: <><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z" /></>,
+    sparkle: <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14Z" /></>,
+    plus: <><path d="M12 5v14M5 12h14" /></>,
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
@@ -87,6 +94,129 @@ function PreviewPanels() {
 
 function readAuthenticatedSession() {
   return sessionStorage.getItem(authTokenKey) !== null;
+}
+
+type WorkspaceSection = 'Dashboard' | 'Transações' | 'Categorias' | 'Investimentos';
+
+const workspaceNav: { label: WorkspaceSection; icon: IconName }[] = [
+  { label: 'Dashboard', icon: 'home' },
+  { label: 'Transações', icon: 'transfer' },
+  { label: 'Categorias', icon: 'tag' },
+  { label: 'Investimentos', icon: 'investment' },
+];
+
+function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSignOut, logoutButtonRef, cancelLogoutButtonRef }: {
+  showLogoutDialog: boolean;
+  onRequestSignOut: () => void;
+  onCancelSignOut: () => void;
+  onSignOut: () => void;
+  logoutButtonRef: RefObject<HTMLButtonElement | null>;
+  cancelLogoutButtonRef: RefObject<HTMLButtonElement | null>;
+}) {
+  const [activeSection, setActiveSection] = useState<WorkspaceSection>('Dashboard');
+  const [chatOpen, setChatOpen] = useState(false);
+  const sectionTitles: Record<WorkspaceSection, string> = {
+    Dashboard: 'Dashboard',
+    Transações: 'Transações',
+    Categorias: 'Categorias',
+    Investimentos: 'Investimentos',
+  };
+
+  return (
+    <main className="workspace-page">
+      <div className="workspace-glow workspace-glow-one" />
+      <div className="workspace-glow workspace-glow-two" />
+      <div className="workspace-frame">
+        <aside className="workspace-sidebar" aria-label="Navegação principal">
+          <button className="workspace-brand" type="button" onClick={() => setActiveSection('Dashboard')} aria-label="Abrir Dashboard">
+            <span className="workspace-brand-icon"><Icon name="wallet" size={20} /></span>
+            <span>BudgetWallet</span>
+          </button>
+
+          <nav className="workspace-nav">
+            {workspaceNav.map(item => (
+              <button key={item.label} className={`workspace-nav-item${activeSection === item.label ? ' active' : ''}`} type="button" aria-current={activeSection === item.label ? 'page' : undefined} onClick={() => setActiveSection(item.label)}>
+                <Icon name={item.icon} size={19} /><span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="workspace-sidebar-bottom">
+            <div className="workspace-attribution">
+              <a href="https://github.com/marco0Fonseca" target="_blank" rel="noreferrer">marco0fonseca</a>
+              <a className="github-link" href="https://github.com/marco0Fonseca/Budget-Wallet" target="_blank" rel="noreferrer" aria-label="Repositório Budget-Wallet no GitHub" title="Repositório no GitHub">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.4-4-1.4-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z" /></svg>
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        <section className="workspace-main">
+          <header className="workspace-topbar">
+            <div className="workspace-mobile-brand"><span className="workspace-brand-icon"><Icon name="wallet" size={19} /></span><strong>BudgetWallet</strong></div>
+            <div className="workspace-topbar-right">
+              <label className="month-select"><Icon name="calendar" size={17} /><span className="sr-only">Mês</span><select defaultValue="2026-11"><option value="2026-11">Novembro de 2026</option><option value="2026-10">Outubro de 2026</option><option value="2026-09">Setembro de 2026</option></select></label>
+              <button ref={logoutButtonRef} className="workspace-signout" type="button" onClick={onRequestSignOut} aria-haspopup="dialog">Sair</button>
+            </div>
+          </header>
+
+          <div className="workspace-content">
+            <div className="workspace-page-heading">
+              <div><span className="eyebrow">SEU ESPAÇO FINANCEIRO</span><h1>{sectionTitles[activeSection]}</h1></div>
+              <span className="workspace-date">Novembro, 2026</span>
+            </div>
+
+            {activeSection !== 'Dashboard' && <WorkspacePlaceholder section={activeSection} />}
+          </div>
+        </section>
+        <button className="ai-chat-trigger" type="button" onClick={() => setChatOpen(open => !open)} aria-haspopup="dialog" aria-expanded={chatOpen} aria-label={chatOpen ? 'Fechar chat do assistente' : 'Abrir chat do assistente'}>
+          <Icon name={chatOpen ? 'back' : 'message'} size={21} />
+        </button>
+        {chatOpen && (
+          <section className="ai-chat-panel" role="dialog" aria-modal="false" aria-labelledby="ai-chat-title">
+            <header><span className="ai-chat-avatar"><Icon name="sparkle" size={20} /></span><div><strong id="ai-chat-title">Assistente BudgetWallet</strong><small>Prévia visual</small></div><button type="button" onClick={() => setChatOpen(false)} aria-label="Fechar chat">×</button></header>
+            <div className="ai-chat-body"><p className="ai-chat-bubble">Olá! Em breve vou ajudar você a entender e organizar suas finanças.</p></div>
+            <form className="ai-chat-input" onSubmit={event => event.preventDefault()}><input name="message" autoComplete="off" aria-label="Mensagem para o assistente" placeholder="Escreva uma mensagem…" /><button type="submit" aria-label="Enviar mensagem"><Icon name="transfer" size={18} /></button></form>
+          </section>
+        )}
+      </div>
+      {showLogoutDialog && (
+        <div className="logout-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onCancelSignOut(); }}>
+          <section className="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title" aria-describedby="logout-dialog-description">
+            <div className="logout-dialog-copy"><h2 id="logout-dialog-title">Sair da sua conta?</h2><p id="logout-dialog-description">Você precisará entrar novamente para acessar sua conta.</p></div>
+            <div className="logout-dialog-actions"><button ref={cancelLogoutButtonRef} className="logout-cancel" type="button" onClick={onCancelSignOut}>Cancelar</button><button className="logout-confirm" type="button" onClick={onSignOut}>Sair</button></div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function WorkspacePlaceholder({ section }: { section: Exclude<WorkspaceSection, 'Dashboard'> }) {
+  if (section === 'Transações') {
+    return (
+      <div className="workspace-section-content">
+        <div className="section-toolbar"><div><span className="eyebrow">RECEITAS E DESPESAS</span><h2>Movimentações</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Nova transação</button></div>
+        <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="transfer" size={26} /></span><h2>Suas transações aparecerão aqui</h2><p>A lista e os filtros por período e tipo serão conectados ao serviço de movimentações na próxima etapa.</p><span className="coming-soon-badge">Integração pendente</span></section>
+      </div>
+    );
+  }
+
+  if (section === 'Categorias') {
+    return (
+      <div className="workspace-section-content">
+        <div className="section-toolbar"><div><span className="eyebrow">ORGANIZAÇÃO</span><h2>Suas categorias</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Nova categoria</button></div>
+        <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="tag" size={26} /></span><h2>Gerencie suas categorias</h2><p>As categorias padrão e as personalizadas serão exibidas aqui, com opção de organizar subcategorias.</p><span className="coming-soon-badge">Integração pendente</span></section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="workspace-section-content">
+      <div className="section-toolbar"><div><span className="eyebrow">ACOMPANHAMENTO</span><h2>Carteira de investimentos</h2></div><button className="primary-action" type="button" disabled><Icon name="plus" size={17} />Novo investimento</button></div>
+      <section className="workspace-empty-state section-empty-state"><span className="empty-state-icon"><Icon name="investment" size={26} /></span><h2>Seus investimentos ficarão reunidos aqui</h2><p>O painel mostrará seus aportes e projeções quando a interface for conectada ao repositório de investimentos.</p><span className="coming-soon-badge">Integração pendente</span></section>
+    </div>
+  );
 }
 
 export function App() {
@@ -286,29 +416,14 @@ export function App() {
   }
 
   if (entered) {
-    return (
-      <div className="dashboard-placeholder">
-        <header>
-          <Brand />
-          <button ref={logoutButtonRef} className="sign-out" type="button" onClick={() => setShowLogoutDialog(true)} aria-haspopup="dialog">Sair</button>
-        </header>
-        <main id="dashboard-main" tabIndex={-1}><h1>Dashboard</h1></main>
-        {showLogoutDialog && (
-          <div className="logout-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setShowLogoutDialog(false); }}>
-            <section className="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title" aria-describedby="logout-dialog-description">
-              <div className="logout-dialog-copy">
-                <h2 id="logout-dialog-title">Sair da sua conta?</h2>
-                <p id="logout-dialog-description">Você precisará entrar novamente para acessar sua conta.</p>
-              </div>
-              <div className="logout-dialog-actions">
-                <button ref={cancelLogoutButtonRef} className="logout-cancel" type="button" onClick={() => { setShowLogoutDialog(false); logoutButtonRef.current?.focus(); }}>Cancelar</button>
-                <button className="logout-confirm" type="button" onClick={signOut}>Sair</button>
-              </div>
-            </section>
-          </div>
-        )}
-      </div>
-    );
+    return <Workspace
+      showLogoutDialog={showLogoutDialog}
+      onRequestSignOut={() => setShowLogoutDialog(true)}
+      onCancelSignOut={() => { setShowLogoutDialog(false); logoutButtonRef.current?.focus(); }}
+      onSignOut={signOut}
+      logoutButtonRef={logoutButtonRef}
+      cancelLogoutButtonRef={cancelLogoutButtonRef}
+    />;
   }
 
   return (
@@ -415,8 +530,7 @@ export function App() {
             </div>
           )}
           {loginView === 'login' && <>
-            <p className="demo-note"><span />Acesso demonstrativo<span /></p>
-            <p className="demo-help">Use apenas dados fictícios.</p>
+            <div className="demo-note" aria-hidden="true"><span /><span /></div>
           </>}
         </section>
         <PreviewPanels />

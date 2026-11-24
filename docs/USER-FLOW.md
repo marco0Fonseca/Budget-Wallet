@@ -4,28 +4,28 @@ Documento evolutivo dos percursos, telas, ações e respostas visíveis ao usuá
 
 ## Navegação definida
 
-Após o login, o usuário entra no Dashboard. A área principal tem quatro destinos: Dashboard e outras três abas, com Receitas e Despesas reunidas em uma única aba. No primeiro incremento, o acesso é simulado; a autenticação real será implementada posteriormente.
+Após o login, o usuário entra na área autenticada. A navegação lateral mantém quatro destinos acessíveis: Dashboard, Transações, Categorias e Investimentos. O Dashboard permanece sem conteúdo nesta etapa; as outras três telas têm estados iniciais visuais enquanto aguardam integração com a API financeira.
 
 ```mermaid
 flowchart TD
-    L[Tela de login] -->|Campos preenchidos no protótipo| D[Dashboard]
-    L -->|Campo obrigatório vazio| E[Exibir erro e permitir nova tentativa]
+    L[Tela de login] -->|Autenticação aceita pela API| D[Dashboard]
+    L -->|Dados inválidos ou API indisponível| E[Exibir erro e permitir nova tentativa]
     E --> L
-    D <--> R[Receitas e Despesas]
+    D <--> R[Transações]
+    D <--> C[Categorias]
     D <--> I[Investimentos]
-    D <--> P[Previsões / Acompanhamento mensal dia a dia]
-    N[Navegação persistente entre as quatro áreas] --- D
+    N[Navegação lateral persistente entre as quatro áreas] --- D
+    D --> A[Assistente visual]
 ```
 
-As quatro áreas ficam acessíveis pela navegação principal, inclusive ao sair do Dashboard. O diagrama não exige voltar ao Dashboard para trocar de aba.
+As quatro áreas ficam acessíveis pela navegação lateral, inclusive ao sair do Dashboard. O botão Assistente abre um painel visual sem integração com IA. Previsões / acompanhamento mensal dia a dia continua previsto para refinamento posterior.
 
 ## Entrada definida
 
-- Um único campo de texto **E-mail ou username** e um campo **Senha**, com caracteres ocultos.
-- Ao preencher os campos e selecionar Entrar, o usuário acessa o Dashboard conforme as regras de acesso demonstrativo em `BUSINESS-RULES.md`.
-- Exibir indicação discreta de acesso demonstrativo e orientar o uso de dados fictícios.
-- **Criar conta** e **Esqueceu a senha?** abrem estados informativos na própria página, com retorno ao login. O cadastro e a recuperação reais serão implementados em incremento posterior; estes estados não enviam dados nem indicam sucesso.
-- Autenticação real, cadastro e recuperação terão seus contratos e regras refinados em BW-09 e BW-11 antes de uso real.
+- O login recebe **E-mail ou username** e **Senha**, valida os dados pela API e, em caso de sucesso, mantém o JWT na sessão do navegador e abre a área autenticada.
+- **Criar conta** recebe nome, e-mail, username, senha e confirmação de senha; a API valida os dados e cria as categorias padrão da conta.
+- **Esqueceu a senha?** recebe identificador, senha nova e confirmação. A recuperação atual redefine pelo identificador, sem comprovar posse da conta; essa limitação permanece antes de uso real.
+- Erros de validação, credenciais ou conexão são mostrados no formulário. O usuário pode voltar à tela de login.
 
 ## Responsabilidades propostas para as telas
 
@@ -34,9 +34,10 @@ A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo 
 | Tela/aba | Objetivo | Conteúdo inicial proposto |
 | --- | --- | --- |
 | Login | Entrar no Dashboard | E-mail ou username, senha e botão Entrar; acesso demonstrativo no primeiro incremento. Cadastro e recuperação na mesma página em incremento posterior. |
-| Dashboard | Entender rapidamente o mês | Mês selecionado, totais de receitas e despesas, resultado mensal, últimas movimentações e atalho para novo lançamento. |
-| Receitas e Despesas | Registrar e consultar movimentações | Lista, filtro por mês e tipo, cadastro com tipo, valor, data, categoria e descrição opcional. Edição e exclusão entram em BW-06. |
-| Investimentos | Consultar e acompanhar investimentos | Aba prevista. A entidade inicial simula aporte único com taxa mensal constante; interface, persistência e acompanhamento de movimentações ainda serão refinados. |
+| Dashboard | Entender rapidamente o mês | A navegação e o cabeçalho estão prontos; o conteúdo do Dashboard será implementado depois. |
+| Transações | Registrar e consultar movimentações | Tela inicial com estado vazio e ação de cadastro ainda desabilitada; listagem, filtros e operações serão conectadas aos repositórios em incrementos seguintes. |
+| Categorias | Organizar classificações | Tela inicial com estado vazio; listagem e gestão de categorias padrão e personalizadas aguardam integração. |
+| Investimentos | Consultar e acompanhar investimentos | Tela inicial com estado vazio; interface e projeção serão conectadas ao repositório em incremento posterior. A entidade inicial simula aporte único com taxa mensal constante. |
 | Previsões / Acompanhamento mensal dia a dia | Planejar e acompanhar a evolução do mês | Calendário com receitas previstas, despesas fixas, meta de economia, orçamento diário editável e redistribuição de sobras/excessos. Regras propostas em `BUSINESS-RULES.md`. |
 
 Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`.
@@ -70,7 +71,7 @@ LOGIN
 
 “Previsões” é apenas um rótulo curto proposto para a navegação; a tela mantém o propósito de acompanhamento mensal dia a dia. A posição e o estilo da navegação serão ajustados ao layout responsivo.
 
-A versão com painéis distribuídos foi escolhida e aplicada à página de login React; veja [Direção visual do login](LOGIN-DESIGN.md). Os cartões são ilustrativos. O Dashboard de destino permanece vazio nesta etapa.
+A versão com painéis distribuídos foi escolhida e aplicada à página de login React; veja [Direção visual do login](LOGIN-DESIGN.md). A área autenticada segue a paleta azul, com fundo em camadas, navegação lateral compacta e painel do assistente visual. O conteúdo do Dashboard será desenhado em um incremento posterior.
 
 ## Primeiro percurso funcional
 
@@ -90,7 +91,7 @@ Comportamentos esperados:
 - Com autenticação real em BW-09, sessão inválida leva ao login e a API rejeita acesso não autenticado.
 - Mês sem lançamentos mostra totais zerados e orientação para cadastrar a primeira movimentação.
 - Erro ao salvar mantém o formulário disponível para correção ou nova tentativa, sem indicar sucesso.
-- As abas previstas podem aparecer identificadas como “Em breve” no protótipo; não devem simular funcionalidades ou dados reais inexistentes.
+- A navegação autenticada ainda não implementa operações financeiras; ações desabilitadas indicam que a integração está pendente.
 
 ## Calendário e planejamento
 
