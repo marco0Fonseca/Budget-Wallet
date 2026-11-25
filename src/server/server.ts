@@ -3,6 +3,8 @@ import type { ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import { registerAuthenticationRoutes } from './services/autheticationService.ts';
 import { registerCategoriesRoutes } from './services/categoriesService.ts';
+import { registerTransactionsRoutes } from './services/transactionsService.ts';
+import { registerInvestmentsRoutes } from './services/investmentsService.ts';
 
 const app = express();
 const PORT = 5000;
@@ -40,8 +42,14 @@ const data = {
         'DELETE /api/categories/:id': 'Delete an unused custom category',
       },
       transactions: {
+        'GET /api/transactions?month=YYYY-MM': 'Get authenticated user transactions and totals for a month',
+        'POST /api/transactions': 'Create an income or expense for the authenticated user (Body: { type, categoryId, amountCents, dateTimestamp, label?, description? })',
+        'PATCH /api/transactions/:id': 'Update an authenticated user transaction (Body: { type?, categoryId?, amountCents?, dateTimestamp?, label?, description? })',
+        'DELETE /api/transactions/:id': 'Delete an authenticated user transaction',
       },
       investments: {
+        'GET /api/investments': 'List investments owned by the authenticated user',
+        'POST /api/investments': 'Create an investment for the authenticated user (Body: { categoryId, amountCents, dateTimestamp, monthlyRate, monthsDuration, description? })',
       }
     }
   };
@@ -52,7 +60,7 @@ app.get('/', (req: Request, res: Response) => {
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>fd_Server</title>
+        <title>BudgetWallet_Server</title>
       </head>
       <body>
         <h1>Budget-Wallet API</h1>
@@ -64,6 +72,8 @@ app.get('/', (req: Request, res: Response) => {
 
 registerAuthenticationRoutes(app);
 registerCategoriesRoutes(app);
+registerTransactionsRoutes(app);
+registerInvestmentsRoutes(app);
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error('Unexpected API error:', error);

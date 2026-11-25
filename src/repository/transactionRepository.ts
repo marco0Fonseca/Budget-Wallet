@@ -20,6 +20,7 @@ export class TransactionRepository {
             Number(transaction.dateTimestamp),
             transaction.userId,
             transaction.description ?? undefined,
+            transaction.label ?? undefined,
         );
     }
 
@@ -36,6 +37,7 @@ export class TransactionRepository {
                 dateTimestamp: BigInt(transaction.dateTimestamp),
                 userId: transaction.userId,
                 description: transaction.description ?? null,
+                label: transaction.label ?? null,
             },
             include: { category: true },
         });
@@ -57,6 +59,19 @@ export class TransactionRepository {
         const transactions = await prisma.transaction.findMany({
             where: { userId },
             orderBy: { id: 'asc' },
+            include: { category: true },
+        });
+        return transactions.map(transaction => this.toEntity(transaction));
+    }
+
+    async findByPeriod(userId: string, startTimestamp: number, endTimestamp: number): Promise<Transaction[]> {
+        Transaction.validateUserId(userId);
+        Transaction.validateDateTimestamp(startTimestamp);
+        Transaction.validateDateTimestamp(endTimestamp);
+        if (endTimestamp <= startTimestamp) throw new Error('End date must follow start date.');
+        const transactions = await prisma.transaction.findMany({
+            where: { userId, dateTimestamp: { gte: BigInt(startTimestamp), lt: BigInt(endTimestamp) } },
+            orderBy: [{ dateTimestamp: 'desc' }, { id: 'desc' }],
             include: { category: true },
         });
         return transactions.map(transaction => this.toEntity(transaction));
@@ -110,6 +125,43 @@ export class TransactionRepository {
         const updated = await prisma.transaction.update({
             where: { id, userId },
             data: { description: description ?? null },
+            include: { category: true },
+        });
+        return this.toEntity(updated);
+    }
+
+    async updateLabel(id: number, userId: string, newLabel: string | undefined): Promise<Transaction> {
+        Transaction.validateId(id);
+        Transaction.validateUserId(userId);
+        const label = Transaction.validateLabel(newLabel);
+        const updated = await prisma.transaction.update({
+            where: { id, userId },
+            data: { label: label ?? null },
+            include: { category: true },
+        });
+        return this.toEntity(updated);
+    }
+
+    async update(transaction: Transaction): Promise<Transaction> {
+        const id = Transaction.validateId(transaction.id);
+        const userId = Transaction.validateUserId(transaction.userId);
+        const categoryId = TransactionCategory.validateId(transaction.category.id);
+        const category = await prisma.transactionCategory.findUniqueOrThrow({
+            where: { id_userId: { id: categoryId, userId } },
+        });
+        const validated = new Transaction(
+            id, this.toCategoryEntity(category), transaction.amountCents, transaction.dateTimestamp,
+            userId, transaction.description, transaction.label,
+        );
+        const updated = await prisma.transaction.update({
+            where: { id, userId },
+            data: {
+                categoryId,
+                amountCents: validated.amountCents,
+                dateTimestamp: BigInt(validated.dateTimestamp),
+                description: validated.description ?? null,
+                label: validated.label ?? null,
+            },
             include: { category: true },
         });
         return this.toEntity(updated);

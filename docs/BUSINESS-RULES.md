@@ -15,9 +15,9 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 - O cadastro recebe nome, e-mail, username, senha e confirmação; a API valida os campos, armazena hash e cria categorias padrão individuais.
 - O login aceita e-mail ou username e valida a senha; em caso de sucesso, emite JWT, mantido pela interface na sessão do navegador.
-- O servidor verifica JWT por middleware na rota de listagem de categorias e confere se o usuário autenticado corresponde ao recurso solicitado. A proteção de outras rotas financeiras deve seguir o mesmo padrão; até então, não considerar toda a API financeira protegida.
+- O servidor verifica JWT por middleware nas rotas de categorias e na listagem de transações, usando o usuário autenticado para delimitar a consulta. As demais rotas financeiras devem seguir o mesmo padrão.
 - A recuperação provisória redefine a senha por e-mail ou username sem comprovar a posse da conta e revela se o identificador existe. É apenas para desenvolvimento local; antes de uso compartilhado ou real, exigir token temporário e de uso único enviado ao e-mail verificado, além de resposta que não revele a existência da conta. Detalhes em `AUTHENTICATION.md`.
-- Os painéis financeiros atuais usam dados locais de exemplo. Quando forem integrados, categorias, lançamentos e planejamento devem pertencer ao usuário da sessão verificada; nunca confiar em `userId` enviado pelo cliente.
+- As listas de transações e investimentos usam dados da API; Dashboard e Planejamento diário ainda usam exemplos locais. O painel de Investimentos não exibe valores de exemplo. Categorias, lançamentos, investimentos e planejamento devem pertencer ao usuário da sessão verificada; nunca confiar em `userId` enviado pelo cliente.
 
 ## Perfil do usuário
 
@@ -33,18 +33,18 @@ As categorias e ideias de planejamento foram aprovadas pelo usuário em 17/11/20
 
 - Novos lançamentos usam `id = -1` apenas em memória. `TransactionRepository.create` exige esse estado e uma categoria já persistida, omite o ID na inserção e retorna a entidade com o ID gerado pelo banco. IDs de consultas/alterações são inteiros positivos de até 2.147.483.647.
 - As consultas e alterações do repositório recebem `userId`. As listagens retornam arrays ordenados por ID; `findAllByCategory` inclui apenas a categoria informada, sem agregar subcategorias. `updateCategory` exige uma categoria do mesmo usuário; o tipo do lançamento acompanha a nova categoria.
-- `updateDescription` remove espaços externos; texto vazio ou `undefined` limpa a descrição no banco. `updateAmountCents` valida centavos antes da gravação.
+- `updateDescription` e `updateLabel` removem espaços externos; texto vazio ou `undefined` limpa o respectivo campo no banco. `updateAmountCents` valida centavos antes da gravação.
 
-- Cada lançamento tem valor positivo em centavos, data e categoria do mesmo proprietário. Descrição é opcional; o tipo vem da categoria.
+- Cada lançamento tem valor positivo em centavos, data e categoria do mesmo proprietário. `label` (nome do lançamento) e `description` (detalhes) são opcionais e independentes; o tipo vem da categoria. A API devolve ambos separadamente. A lista exibe `label` como título quando informado e, caso contrário, o nome da categoria; a descrição fica nos detalhes.
 - `Transaction` aceita apenas categorias `INCOME` ou `EXPENSE`; `INVESTMENT` é reservado à entidade `Investment`.
 - `Transaction.amountCents` é um campo `readonly` expresso em inteiros de 1 a 2.147.483.647 centavos, sem arredondamento automático. A conversão da entrada em reais deve ocorrer antes de construir a entidade. `monetaryValue()` retorna uma string com ponto e duas casas decimais (1550 → "15.50"), apenas para apresentação; cálculos usam centavos. Não há getter/setter `value`. Totais agregados precisam de validação própria de limite.
-- A classe usa provisoriamente `dateTimestamp` em milissegundos inteiros seguros, com validação de data válida. A persistência converte o timestamp para `BigInt` e o reconstrói como `number`. A descrição opcional fica no final do construtor, tem espaços externos removidos e, se vazia, é omitida.
+- A classe usa provisoriamente `dateTimestamp` em milissegundos inteiros seguros, com validação de data válida. A persistência converte o timestamp para `BigInt` e o reconstrói como `number`. Os parâmetros opcionais `description` e `label` ficam no final do construtor, têm espaços externos removidos e, se vazios, são omitidos.
 - Por decisão do usuário, a proibição de datas futuras foi suspensa nesta versão. Isso não significa que uma ocorrência futura já tenha sido paga ou recebida; a distinção entre previsto e realizado será refinada em BW-17 antes de automatizar recorrências.
 - A convenção inicial de fuso para apresentação é `America/Sao_Paulo`; a representação definitiva da data financeira e sua aplicação às recorrências serão revisadas em BW-17.
 - Resultado mensal = receitas realizadas menos despesas realizadas no mês. O período inclui o primeiro dia e exclui o primeiro dia do mês seguinte; os totais independem da paginação.
 - Resultado acumulado até um dia considera os lançamentos desde o início do mês até esse dia. Nenhum desses resultados representa saldo bancário.
 - Mês sem lançamentos tem totais zerados. Exemplo: receita de R$ 2.000,00 menos despesa de R$ 150,50 resulta em R$ 1.849,50.
-- A edição segue as mesmas validações da criação. Exclusão e correção devem atualizar os resultados derivados.
+- A edição segue as mesmas validações da criação. A exclusão inicial remove definitivamente apenas o lançamento pertencente ao usuário autenticado, após confirmação na interface; não há desfazer nem trilha de auditoria nesta etapa. A categoria permanece. Exclusão e correção atualizam os resultados derivados na consulta seguinte.
 
 ## Categorias
 
@@ -53,6 +53,8 @@ O método updateParent aceita null para transformar uma subcategoria em raiz ou 
 Uma categoria nova tem `id = -1` apenas em memória. O repositório aceita esse estado no `create`, omite o ID na inserção e retorna outra entidade com o ID autoincremental gerado pelo banco. A entidade original mantém `-1`; categorias já persistidas não podem ser reenviadas ao `create`. IDs persistidos e usados em consultas/atualizações devem ser números inteiros de 1 a 2.147.483.647, compatíveis com `Int` do Prisma. `parentId` aceita `null` ou um ID positivo válido, nunca `-1`. A sequência é gerada pelo banco e pode apresentar lacunas.
 
 Usar a entidade `TransactionCategory`, com `parentId` opcional apontando para uma categoria raiz. Subcategorias são categorias comuns vinculadas a um pai; não precisam de classe ou tabela separada. A entidade, o schema Prisma e as operações de persistência já estão implementados.
+
+Por enquanto, a lista de lançamentos mostra apenas o ícone de receita ou despesa, conforme o tipo. Ícones próprios de categorias e subcategorias ficam para um incremento posterior: na criação ou edição, o usuário escolherá de um catálogo de ícones, e a escolha será persistida na categoria. Consulte BW-12 no [backlog](BACKLOG.md).
 
 O catálogo inicial aprovado contém 21 categorias. Todas são raízes (`parentId: null`), são copiadas por usuário e recebem `isDefault: true`. O repositório inclui `createDefaultCategoriesForUser(userId)` para persistir a cópia individual; o fluxo atual de cadastro no servidor chama essa rotina após criar a conta.
 
@@ -86,6 +88,8 @@ Regras propostas:
 - `monthlyRate` é uma fração mensal constante: `0.01` corresponde a 1% ao mês. Taxa zero é válida; taxas negativas maiores que `-1` permitem simular perdas. Rejeitar taxas não finitas e valores iguais ou inferiores a `-1`.
 - `monthsDuration` é um inteiro de 1 a 2.147.483.647, compatível com `Int` do Prisma. Projeções usam meses inteiros não negativos; períodos superiores ao prazo ficam limitados à duração informada.
 - `InvestmentRepository` cria apenas entidades novas (`id = -1`) e devolve o ID gerado pelo banco. A categoria persistida precisa pertencer ao usuário e ter tipo `INVESTMENT`. Consultas, atualizações e exclusões são filtradas por proprietário; listagens são ordenadas por ID. Atualizações de valor, taxa, duração e descrição usam as validações da entidade. Descrição vazia ou `undefined` remove o texto existente.
+- `POST /api/investments` recebe categoria, aporte em centavos, data, taxa mensal, prazo e descrição opcional. A identidade vem do JWT; a API rejeita categoria inexistente, de outro usuário ou de tipo diferente de `INVESTMENT` antes de persistir. O aporte não é registrado automaticamente como transação.
+- `GET /api/investments` retorna apenas investimentos da conta autenticada, em ordem crescente de ID. O formulário converte reais em centavos antes do envio e porcentagem mensal em fração decimal (`1,00%` → `0.01`); as validações da API permanecem obrigatórias.
 - `projectedAmountCents(n)` calcula aporte × (1 + taxa mensal)^n; `projectedGainCents(n)` desconta o aporte inicial. Ambos retornam centavos, com arredondamento do montante apenas no resultado final e rejeição de resultados fora dos inteiros seguros do JavaScript. Sem argumento, usam o prazo completo.
 - `projectedAmountOn(timestamp)` e `projectedGainOn(timestamp)` calculam por meses completos desde o início. Como convenção desta simulação, aniversários usam UTC e preservam o horário; dias inexistentes caem no último dia do mês, sem perder a referência ao dia original nos meses seguintes. Exemplo: 31/01 → 28 ou 29/02 → 31/03. Essa convenção não implementa a recorrência geral de BW-17.
 - Datas de consulta anteriores ao início e timestamps inválidos são rejeitados. Uma data de início futura pode ser cadastrada, mas `projectedGainUntilNow()` também rejeita a consulta enquanto ela anteceder o início.

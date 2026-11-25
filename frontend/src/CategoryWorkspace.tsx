@@ -58,7 +58,7 @@ function sortCategoriesByHierarchy(categories: Category[]): Category[] {
   return ordered;
 }
 
-function CategoryIcon({ name, size = 18 }: { name: 'search' | 'filter' | 'tag' | 'income' | 'expense' | 'investment' | 'plus' | 'edit' | 'delete'; size?: number }) {
+function CategoryIcon({ name, size = 18 }: { name: 'search' | 'filter' | 'tag' | 'income' | 'expense' | 'investment' | 'plus' | 'edit' | 'delete' | 'close'; size?: number }) {
   const paths: Record<typeof name, ReactNode> = {
     search: <><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4.5 4.5" /></>,
     filter: <><path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" /></>,
@@ -69,6 +69,7 @@ function CategoryIcon({ name, size = 18 }: { name: 'search' | 'filter' | 'tag' |
     plus: <><path d="M12 5v14M5 12h14" /></>,
     edit: <><path d="m4 20 4.5-1 11-11-3.5-3.5-11 11L4 20Zm10-13 3.5 3.5" /></>,
     delete: <><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h10l1-13M10 11v6m4-6v6" /></>,
+    close: <path d="M6 6l12 12M18 6 6 18" />,
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
@@ -126,6 +127,7 @@ export function CategoryWorkspace() {
   const popoverRef = useRef<HTMLDivElement>(null);
   const createDialogRef = useRef<HTMLElement>(null);
   const createLabelRef = useRef<HTMLInputElement>(null);
+  const parentPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -202,6 +204,17 @@ export function CategoryWorkspace() {
       previousFocus?.focus();
     };
   }, [createDialogOpen, parentPickerOpen]);
+
+  useEffect(() => {
+    if (!parentPickerOpen) return;
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (event.target instanceof Node && !parentPickerRef.current?.contains(event.target)) {
+        setParentPickerOpen(false);
+      }
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, [parentPickerOpen]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -439,11 +452,11 @@ export function CategoryWorkspace() {
 
       {createDialogOpen && <div className="category-dialog-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setCreateDialogOpen(false); }}>
         <section className="category-create-dialog" ref={createDialogRef} role="dialog" aria-modal="true" aria-labelledby="category-dialog-title" aria-describedby="category-dialog-description">
-          <header className="category-dialog-header"><div><span className="eyebrow">{editingCategory ? 'EDITAR PERSONALIZAÇÃO' : 'NOVA PERSONALIZAÇÃO'}</span><h2 id="category-dialog-title">{editingCategory ? 'Editar categoria' : 'Criar categoria'}</h2><p id="category-dialog-description">{editingCategory ? 'Atualize os dados da sua categoria.' : 'Organize seus lançamentos com uma categoria própria.'}</p></div><button type="button" onClick={() => { setCreateDialogOpen(false); setEditingCategory(null); }} aria-label="Fechar formulário">×</button></header>
+          <header className="category-dialog-header"><div><span className="eyebrow">{editingCategory ? 'EDITAR PERSONALIZAÇÃO' : 'NOVA PERSONALIZAÇÃO'}</span><h2 id="category-dialog-title">{editingCategory ? 'Editar categoria' : 'Criar categoria'}</h2><p id="category-dialog-description">{editingCategory ? 'Atualize os dados da sua categoria.' : 'Organize seus lançamentos com uma categoria própria.'}</p></div><button type="button" onClick={() => { setCreateDialogOpen(false); setEditingCategory(null); }} aria-label="Fechar formulário"><CategoryIcon name="close" size={18} /></button></header>
           <form className="category-create-form" onSubmit={submitCreateCategory} noValidate>
             <div className="category-form-field"><label htmlFor="new-category-label">Nome da categoria</label><input ref={createLabelRef} id="new-category-label" name="label" value={createLabel} onChange={event => { setCreateLabel(event.target.value); setCreateError(''); }} placeholder="Ex.: Viagem" maxLength={80} required /></div>
             <fieldset className="category-form-field category-kind-field"><legend>Tipo</legend><div className="category-kind-options">{groups.map(group => <label key={group.type} className={createType === group.type ? 'selected' : ''}><input type="radio" name="type" value={group.type} checked={createType === group.type} disabled={editingCategory !== null && editingCategory.parentId !== null} onChange={() => { setCreateType(group.type); setCreateParentId(''); }} /><span>{group.label}</span></label>)}</div>{editingCategory !== null && editingCategory.parentId !== null && <small>O tipo de uma subcategoria segue o da categoria principal.</small>}</fieldset>
-            <div className="category-form-field category-parent-field">
+            <div className="category-form-field category-parent-field" ref={parentPickerRef}>
               <label id="new-category-parent-label">Categoria principal <span>(opcional)</span></label>
               <button
                 aria-controls="new-category-parent-options"
@@ -466,7 +479,7 @@ export function CategoryWorkspace() {
               <small>Escolha uma categoria principal para criar uma subcategoria.</small>
             </div>
             {createError && <p className="category-create-error" role="alert">{createError}</p>}
-            <footer className="category-dialog-actions"><button className="category-cancel-button" type="button" onClick={() => { setCreateDialogOpen(false); setEditingCategory(null); }} disabled={isCreating}>Cancelar</button><button className="category-save-button" type="submit" disabled={isCreating}>{isCreating ? 'Salvando…' : editingCategory ? 'Salvar alterações' : 'Criar categoria'}</button></footer>
+            <footer className="category-dialog-actions"><button className="category-save-button" type="submit" disabled={isCreating}>{isCreating ? 'Salvando…' : editingCategory ? 'Salvar alterações' : 'Criar categoria'}</button></footer>
           </form>
         </section>
       </div>}

@@ -52,6 +52,7 @@ model TransactionCategory {
 model Transaction {
   id            Int    @id @default(autoincrement())
   categoryId    Int
+  label         String?
   amountCents   Int
   dateTimestamp BigInt
   userId        String

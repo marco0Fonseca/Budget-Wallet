@@ -14,7 +14,9 @@ export class Transaction {
 
   public readonly description?: string;
 
-  constructor(id: number = -1, category: TransactionCategory, amountCents: number, dateTimestamp: number, userId: string, description?: string) {
+  public readonly label?: string;
+
+  constructor(id: number = -1, category: TransactionCategory, amountCents: number, dateTimestamp: number, userId: string, description?: string, label?: string) {
     this.id = id === -1 ? -1 : Transaction.validateId(id);
     this.userId = Transaction.validateUserId(userId);
     this.category = Transaction.validateCategory(category, this.userId);
@@ -24,6 +26,10 @@ export class Transaction {
     const validatedDescription = Transaction.validateDescription(description);
     if (validatedDescription !== undefined) {
       this.description = validatedDescription;
+    }
+    const validatedLabel = Transaction.validateLabel(label);
+    if (validatedLabel !== undefined) {
+      this.label = validatedLabel;
     }
   }
 
@@ -72,6 +78,13 @@ export class Transaction {
     }
 
     return description?.trim() || undefined;
+  }
+
+  static validateLabel(label: string | undefined): string | undefined {
+    if (label !== undefined && typeof label !== 'string') {
+      throw new Error('Label must be a string.');
+    }
+    return label?.trim() || undefined;
   }
 
   static validateAmount(amountCents: number): number {

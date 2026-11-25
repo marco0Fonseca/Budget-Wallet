@@ -102,3 +102,13 @@ test('allows an omitted or blank description and rejects non-string descriptions
     /Description/,
   );
 });
+
+test('keeps an optional label separate from the description', () => {
+  const withLabel = new Transaction(-1, category, 100, 1795000000123, 'user-id', '  Details  ', '  Groceries  ');
+  assert.equal(withLabel.label, 'Groceries');
+  assert.equal(withLabel.description, 'Details');
+  for (const label of [undefined, '', '   ']) {
+    assert.equal(new Transaction(-1, category, 100, 1795000000123, 'user-id', undefined, label).label, undefined);
+  }
+  assert.throws(() => Transaction.validateLabel(123 as unknown as string), /Label must be a string/);
+});

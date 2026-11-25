@@ -215,11 +215,16 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
 .workspace-attribution .github-link { display: grid; place-items: center; color: #536984; }
 .workspace-attribution .github-link:hover { color: #0866d8; }
 .workspace-main { min-width: 0; padding: 0 clamp(20px, 2.7vw, 36px) 28px; }
-.workspace-topbar { display: flex; align-items: center; justify-content: flex-end; min-height: 60px; border-bottom: 1px solid #e7edf5; }
+.workspace-topbar { position: relative; z-index: 10; display: flex; align-items: center; justify-content: flex-end; min-height: 60px; border-bottom: 1px solid #e7edf5; }
 .workspace-topbar-right { display: flex; align-items: center; gap: 10px; }
 .workspace-mobile-brand { display: none; align-items: center; gap: 8px; color: #10254a; font-weight: 750; }
-.month-select { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 1px solid #d6e1ef; border-radius: 9px; background: rgba(255,255,255,.76); color: #627793; }
-.month-select select { border: 0; outline: 0; background: transparent; color: #334b6c; font: inherit; font-size: 12px; }
+.month-select { position: relative; color: #627793; }
+.month-select-trigger { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border: 1px solid #d6e1ef; border-radius: 9px; background: rgba(255,255,255,.86); color: #334b6c; font: inherit; font-size: 12px; cursor: pointer; }
+.month-select-trigger:hover, .month-select-trigger[aria-expanded="true"] { border-color: #89b5f3; background: #edf5ff; }
+.month-select-trigger:focus-visible, .month-select-options button:focus-visible { outline: 2px solid #0969da; outline-offset: 2px; }
+.month-select-options { position: absolute; z-index: 30; right: 0; top: calc(100% + 6px); width: max(100%, 192px); max-height: min(340px, calc(100vh - 100px)); overflow-y: auto; padding: 6px; border: 1px solid #d5e3f5; border-radius: 13px; background: #fff; box-shadow: 0 16px 34px rgba(25, 62, 116, .18); }
+.month-select-options button { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: #334b6c; text-align: left; font: inherit; font-size: 12px; cursor: pointer; }
+.month-select-options button:hover, .month-select-options button.selected { background: #e8f2ff; color: #0860ce; }
 .workspace-signout { min-height: 33px; padding: 0 12px; border: 1px solid #d8e3f1; border-radius: 8px; background: #fff; color: #496486; font-size: 11px; font-weight: 650; }
 .workspace-signout:hover { border-color: #8eb5e8; color: #075fcd; }
 .workspace-content { max-width: 1044px; margin: 0 auto; }
@@ -259,7 +264,7 @@ button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(8, 102
   .workspace-sidebar { order: 2; flex: 0 0 auto; align-items: stretch; padding: 7px 9px 9px; border-top: 1px solid #e2ebf6; border-right: 0; }
   .workspace-sidebar > .workspace-brand,.workspace-sidebar-bottom { display: none; }
   .workspace-nav { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 2px; }.workspace-nav-item { display: grid; justify-items: center; gap: 3px; min-height: 47px; padding-inline: 2px; font-size: 8px; }.workspace-nav-item span { position: static; width: auto; height: auto; overflow: visible; clip: auto; clip-path: none; }
-  .workspace-main { order: 1; padding: 0 14px 20px; }.workspace-topbar { justify-content: space-between; min-height: 58px; }.workspace-mobile-brand { display: flex; font-size: 12px; }.workspace-mobile-brand .workspace-brand-icon { flex-basis: 27px; width: 27px; height: 27px; }.workspace-topbar-right { gap: 6px; }.month-select { gap: 5px; height: 34px; padding: 0 7px; }.month-select select { max-width: 104px; font-size: 10px; }.workspace-signout { min-height: 33px; padding-inline: 9px; font-size: 10px; }
+  .workspace-main { order: 1; padding: 0 14px 20px; }.workspace-topbar { justify-content: space-between; min-height: 58px; }.workspace-mobile-brand { display: flex; font-size: 12px; }.workspace-mobile-brand .workspace-brand-icon { flex-basis: 27px; width: 27px; height: 27px; }.workspace-topbar-right { gap: 6px; }.month-select-trigger { gap: 5px; min-height: 34px; padding: 0 7px; font-size: 10px; }.workspace-signout { min-height: 33px; padding-inline: 9px; font-size: 10px; }
   .workspace-page-heading { margin: 20px 0 14px; }.workspace-page-heading h1 { font-size: 25px; }.workspace-date { font-size: 10px; }
   .workspace-empty-state { min-height: 320px; }.ai-chat-trigger { right: 14px; bottom: 65px; }.ai-chat-panel { right: 12px; bottom: 120px; width: min(360px, calc(100vw - 48px)); }
   .section-toolbar { align-items: flex-start; padding: 13px; }.section-toolbar h2 { font-size: 16px; }.primary-action { min-height: 36px; padding: 0 9px; font-size: 10px; }

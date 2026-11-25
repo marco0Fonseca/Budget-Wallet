@@ -89,6 +89,7 @@ export function registerAuthenticationRoutes(app: Express): void {
           name: credentials.user.name,
           email: credentials.user.email,
           username: credentials.user.username,
+          createdAtTimestamp: credentials.user.createdAtTimestamp,
         },
         token,
       });

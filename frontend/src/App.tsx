@@ -4,7 +4,7 @@ import { TransactionWorkspace } from './TransactionWorkspace.tsx';
 import { InvestmentWorkspace } from './InvestmentWorkspace.tsx';
 import { DashboardWorkspace } from './DashboardWorkspace.tsx';
 import { PlanningWorkspace } from './PlanningWorkspace.tsx';
-import { apiBaseUrl, authTokenKey } from './api.ts';
+import { accountCreatedAtKey, apiBaseUrl, authTokenKey } from './api.ts';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const percentFormatter = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2 });
@@ -101,6 +101,35 @@ function readAuthenticatedSession() {
   return sessionStorage.getItem(authTokenKey) !== null;
 }
 
+function saoPauloMonth(timestamp: number): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit' }).formatToParts(new Date(timestamp));
+  const year = parts.find(part => part.type === 'year')?.value;
+  const month = parts.find(part => part.type === 'month')?.value;
+  return `${year}-${month}`;
+}
+
+function monthLabel(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year!, monthNumber! - 1, 1)));
+  return label[0]!.toLocaleUpperCase('pt-BR') + label.slice(1);
+}
+
+function accountMonths(): string[] {
+  const current = saoPauloMonth(Date.now());
+  const stored = Number(sessionStorage.getItem(accountCreatedAtKey));
+  const first = Number.isSafeInteger(stored) && stored > 0 ? saoPauloMonth(stored) : current;
+  if (first > current) return [current];
+  const [year, month] = current.split('-').map(Number);
+  const months: string[] = [];
+  for (let offset = 0; offset < 1200; offset++) {
+    const date = new Date(Date.UTC(year!, month! - 1 - offset, 1));
+    const value = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    if (value < first) break;
+    months.push(value);
+  }
+  return months;
+}
+
 type WorkspaceSection = 'Dashboard' | 'Transações' | 'Categorias' | 'Investimentos' | 'Planejamento diário';
 
 const workspaceNav: { label: WorkspaceSection; icon: IconName }[] = [
@@ -121,9 +150,37 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
 }) {
   const [activeSection, setActiveSection] = useState<WorkspaceSection>('Dashboard');
   const [chatOpen, setChatOpen] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('2026-11');
-  const selectedMonthDate = new Date(`${selectedMonth}-01T12:00:00`);
-  const selectedMonthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(selectedMonthDate);
+  const [selectedMonth, setSelectedMonth] = useState(() => saoPauloMonth(Date.now()));
+  const [lastMonthlySelection, setLastMonthlySelection] = useState(selectedMonth);
+  const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+  const monthMenuRef = useRef<HTMLDivElement>(null);
+  const availableMonths = accountMonths();
+  const selectedMonthLabel = selectedMonth === 'all' ? 'Todo o período' : monthLabel(selectedMonth);
+
+  function navigateToSection(section: WorkspaceSection) {
+    setActiveSection(section);
+    setMonthMenuOpen(false);
+    if (section !== 'Transações' && selectedMonth === 'all') setSelectedMonth(lastMonthlySelection);
+  }
+
+  function chooseMonth(month: string) {
+    setSelectedMonth(month);
+    if (month !== 'all') setLastMonthlySelection(month);
+    setMonthMenuOpen(false);
+  }
+
+  useEffect(() => {
+    if (!monthMenuOpen) return;
+    function closeMenu(event: PointerEvent) {
+      if (event.target instanceof Node && !monthMenuRef.current?.contains(event.target)) setMonthMenuOpen(false);
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMonthMenuOpen(false);
+    }
+    document.addEventListener('pointerdown', closeMenu);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => { document.removeEventListener('pointerdown', closeMenu); document.removeEventListener('keydown', closeOnEscape); };
+  }, [monthMenuOpen]);
   const sectionTitles: Record<WorkspaceSection, string> = {
     Dashboard: 'Dashboard',
     Transações: 'Transações',
@@ -138,14 +195,14 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
       <div className="workspace-glow workspace-glow-two" />
       <div className="workspace-frame">
         <aside className="workspace-sidebar" aria-label="Navegação principal">
-          <button className="workspace-brand" type="button" onClick={() => setActiveSection('Dashboard')} aria-label="Abrir Dashboard">
+          <button className="workspace-brand" type="button" onClick={() => navigateToSection('Dashboard')} aria-label="Abrir Dashboard">
             <span className="workspace-brand-icon"><Icon name="wallet" size={20} /></span>
             <span>BudgetWallet</span>
           </button>
 
           <nav className="workspace-nav">
             {workspaceNav.map(item => (
-              <button key={item.label} className={`workspace-nav-item${activeSection === item.label ? ' active' : ''}`} type="button" aria-current={activeSection === item.label ? 'page' : undefined} onClick={() => setActiveSection(item.label)}>
+              <button key={item.label} className={`workspace-nav-item${activeSection === item.label ? ' active' : ''}`} type="button" aria-current={activeSection === item.label ? 'page' : undefined} onClick={() => navigateToSection(item.label)}>
                 <Icon name={item.icon} size={19} /><span>{item.label}</span>
               </button>
             ))}
@@ -165,17 +222,23 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
           <header className="workspace-topbar">
             <div className="workspace-mobile-brand"><span className="workspace-brand-icon"><Icon name="wallet" size={19} /></span><strong>BudgetWallet</strong></div>
             <div className="workspace-topbar-right">
-              <label className="month-select"><Icon name="calendar" size={17} /><span className="sr-only">Mês</span><select value={selectedMonth} onChange={event => setSelectedMonth(event.target.value)}><option value="2026-11">Novembro de 2026</option><option value="2026-10">Outubro de 2026</option><option value="2026-09">Setembro de 2026</option></select></label>
+              <div className="month-select" ref={monthMenuRef}>
+                <button className="month-select-trigger" type="button" aria-label={`Período: ${selectedMonthLabel}`} aria-expanded={monthMenuOpen} aria-controls="workspace-month-options" onClick={() => setMonthMenuOpen(open => !open)}><Icon name="calendar" size={17} /><span>{selectedMonthLabel}</span><span aria-hidden="true">⌄</span></button>
+                {monthMenuOpen && <div className="month-select-options" id="workspace-month-options" role="group" aria-label="Selecionar período">
+                  {activeSection === 'Transações' && <button type="button" className={selectedMonth === 'all' ? 'selected' : ''} aria-pressed={selectedMonth === 'all'} onClick={() => chooseMonth('all')}>Todo o período{selectedMonth === 'all' && <span aria-hidden="true">✓</span>}</button>}
+                  {availableMonths.map(month => <button type="button" key={month} className={selectedMonth === month ? 'selected' : ''} aria-pressed={selectedMonth === month} onClick={() => chooseMonth(month)}>{monthLabel(month)}{selectedMonth === month && <span aria-hidden="true">✓</span>}</button>)}
+                </div>}
+              </div>
               <button ref={logoutButtonRef} className="workspace-signout" type="button" onClick={onRequestSignOut} aria-haspopup="dialog">Sair</button>
             </div>
           </header>
 
           <div className="workspace-content">
             <div className="workspace-page-heading">
-              <div><span className="eyebrow">SEU ESPAÇO FINANCEIRO</span><h1>{sectionTitles[activeSection]}</h1></div>
+              <div>{activeSection !== 'Investimentos' && <span className="eyebrow">SEU ESPAÇO FINANCEIRO</span>}<h1>{sectionTitles[activeSection]}</h1></div>
             </div>
 
-            {activeSection === 'Dashboard' ? <DashboardWorkspace selectedMonth={selectedMonth} onNavigate={setActiveSection} /> : <WorkspacePlaceholder section={activeSection} selectedMonth={selectedMonth} />}
+            {activeSection === 'Dashboard' ? <DashboardWorkspace selectedMonth={selectedMonth} onNavigate={navigateToSection} /> : <WorkspacePlaceholder section={activeSection} selectedMonth={selectedMonth} onSelectMonth={chooseMonth} />}
           </div>
         </section>
         <button className="ai-chat-trigger" type="button" onClick={() => setChatOpen(open => !open)} aria-haspopup="dialog" aria-expanded={chatOpen} aria-label={chatOpen ? 'Fechar chat do assistente' : 'Abrir chat do assistente'}>
@@ -201,9 +264,9 @@ function Workspace({ showLogoutDialog, onRequestSignOut, onCancelSignOut, onSign
   );
 }
 
-function WorkspacePlaceholder({ section, selectedMonth }: { section: Exclude<WorkspaceSection, 'Dashboard'>; selectedMonth: string }) {
+function WorkspacePlaceholder({ section, selectedMonth, onSelectMonth }: { section: Exclude<WorkspaceSection, 'Dashboard'>; selectedMonth: string; onSelectMonth: (month: string) => void }) {
   if (section === 'Transações') {
-    return <TransactionWorkspace selectedMonth={selectedMonth} />;
+    return <TransactionWorkspace selectedMonth={selectedMonth} onSelectMonth={onSelectMonth} />;
   }
 
   if (section === 'Categorias') {
@@ -289,7 +352,7 @@ export function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: identifier.trim(), password }),
       });
-      const result: { error?: string; token?: string } = await response.json();
+      const result: { error?: string; token?: string; user?: { createdAtTimestamp?: number } } = await response.json();
 
       if (!response.ok) {
         setErrors({ form: result.error ?? 'Não foi possível entrar. Confira seus dados e tente novamente.' });
@@ -301,6 +364,11 @@ export function App() {
       }
 
       sessionStorage.setItem(authTokenKey, result.token);
+      if (Number.isSafeInteger(result.user?.createdAtTimestamp) && (result.user?.createdAtTimestamp ?? 0) > 0) {
+        sessionStorage.setItem(accountCreatedAtKey, String(result.user!.createdAtTimestamp));
+      } else {
+        sessionStorage.removeItem(accountCreatedAtKey);
+      }
       setPassword('');
       setEntered(true);
       history.pushState(null, '', '/dashboard');
@@ -323,6 +391,7 @@ export function App() {
   function signOut() {
     setShowLogoutDialog(false);
     sessionStorage.removeItem(authTokenKey);
+    sessionStorage.removeItem(accountCreatedAtKey);
     setIdentifier('');
     setPassword('');
     setShowPassword(false);

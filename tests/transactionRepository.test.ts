@@ -26,7 +26,7 @@ async function fixture(t: TestContext, username: string) {
     const { user } = await createTestUser(t, username);
     const category = await categories.create(new TransactionCategory(-1, 'Food', TransactionType.EXPENSE, null, user.id));
     const secondCategory = await categories.create(new TransactionCategory(-1, 'Market', TransactionType.EXPENSE, category.id, user.id));
-    const draft = new Transaction(-1, category, 1550, 1795000000123, user.id, '  Purchase  ');
+    const draft = new Transaction(-1, category, 1550, 1795000000123, user.id, '  Purchase  ', '  Groceries  ');
     const transaction = await transactions.create(draft);
     return { user, category, secondCategory, draft, transaction };
 }
@@ -96,7 +96,9 @@ test('creates and queries transactions with generated IDs, exact cents and origi
     assert.equal(a.transaction.amountCents, 1550);
     assert.equal(a.transaction.dateTimestamp, 1795000000123);
     assert.equal(a.transaction.description, 'Purchase');
+    assert.equal(a.transaction.label, 'Groceries');
     assert.equal(second.description, undefined);
+    assert.equal(second.label, undefined);
     assert.deepStrictEqual(a.transaction.category, a.category);
     assert.deepStrictEqual(await transactions.findById(a.transaction.id, a.user.id), a.transaction);
     assert.deepStrictEqual(await transactions.findAllByUserId(a.user.id), [a.transaction, second]);
@@ -124,7 +126,19 @@ test('persists updates and deletes only the selected transaction', async (t) => 
     assert.equal(amount.dateTimestamp, a.transaction.dateTimestamp);
     const description = await transactions.updateDescription(changed.id, a.user.id, '  New description  ');
     assert.equal(description.description, 'New description');
+    assert.equal(description.label, 'Groceries');
     assert.deepStrictEqual(await transactions.findById(changed.id, a.user.id), description);
+    const relabeled = await transactions.updateLabel(changed.id, a.user.id, '  Weekly market  ');
+    assert.equal(relabeled.label, 'Weekly market');
+    assert.equal(relabeled.description, 'New description');
+    assert.deepStrictEqual(await transactions.findById(changed.id, a.user.id), relabeled);
+    for (const text of ['', '   ', undefined]) {
+        await transactions.updateLabel(changed.id, a.user.id, 'Temporary');
+        const cleared = await transactions.updateLabel(changed.id, a.user.id, text);
+        assert.equal(cleared.label, undefined);
+        assert.ok(prisma);
+        assert.equal((await prisma.transaction.findUniqueOrThrow({ where: { id: changed.id } })).label, null);
+    }
     for (const text of ['', '   ', undefined]) {
         await transactions.updateDescription(changed.id, a.user.id, 'Temporary');
         const cleared = await transactions.updateDescription(changed.id, a.user.id, text);
@@ -138,6 +152,28 @@ test('persists updates and deletes only the selected transaction', async (t) => 
     assert.deepStrictEqual(await transactions.findAllByUserId(a.user.id), []);
     assert.deepStrictEqual(await transactions.findById(b.transaction.id, b.user.id), b.transaction);
     assert.deepStrictEqual(await categories.findCategoryById(a.secondCategory.id, a.user.id), a.secondCategory);
+});
+
+test('updates a complete transaction in one write and preserves the original timestamp on other records', async (t) => {
+    const owner = await fixture(t, 'complete.update.owner');
+    const other = await fixture(t, 'complete.update.other');
+    const incomeCategory = await categories.create(new TransactionCategory(-1, 'Income', TransactionType.INCOME, null, owner.user.id));
+    const newDate = Date.parse('2026-12-03T15:00:00.000Z');
+    const updated = await transactions.update(new Transaction(
+        owner.transaction.id, incomeCategory, 9876, newDate, owner.user.id, '  Updated details  ', '  New title  ',
+    ));
+    assert.equal(updated.category.id, incomeCategory.id);
+    assert.equal(updated.amountCents, 9876);
+    assert.equal(updated.dateTimestamp, newDate);
+    assert.equal(updated.description, 'Updated details');
+    assert.equal(updated.label, 'New title');
+    assert.deepStrictEqual(await transactions.findById(updated.id, owner.user.id), updated);
+    assert.deepStrictEqual(await transactions.findById(other.transaction.id, other.user.id), other.transaction);
+
+    await assert.rejects(() => transactions.update(new Transaction(
+        owner.transaction.id, other.category, 100, newDate, other.user.id,
+    )), { code: 'P2025' });
+    assert.deepStrictEqual(await transactions.findById(updated.id, owner.user.id), updated);
 });
 
 test('rejects investment categories when changing a transaction category', async (t) => {
@@ -163,6 +199,7 @@ test('rejects invalid updates, missing records and cross-user operations without
         await assert.rejects(() => transactions.updateCategory(id, userId, b.category.id), { code: 'P2025' });
         await assert.rejects(() => transactions.updateAmountCents(id, userId, 100), { code: 'P2025' });
         await assert.rejects(() => transactions.updateDescription(id, userId, 'Rejected'), { code: 'P2025' });
+        await assert.rejects(() => transactions.updateLabel(id, userId, 'Rejected'), { code: 'P2025' });
         await assert.rejects(() => transactions.delete(id, userId), { code: 'P2025' });
     }
     for (const categoryId of [b.category.id, 2147483647]) {
@@ -176,6 +213,7 @@ test('rejects invalid updates, missing records and cross-user operations without
         await assert.rejects(() => transactions.updateAmountCents(a.transaction.id, a.user.id, value), /Amount/);
     }
     await assert.rejects(() => transactions.updateDescription(a.transaction.id, a.user.id, 123 as unknown as string), /Description/);
+    await assert.rejects(() => transactions.updateLabel(a.transaction.id, a.user.id, 123 as unknown as string), /Label/);
     assert.deepStrictEqual(await prisma.transaction.findMany({ orderBy: { id: 'asc' } }), original);
 });
 
@@ -188,6 +226,7 @@ test('validates IDs and owners at repository boundaries', async () => {
         await assert.rejects(() => transactions.updateCategory(1, 'owner', id), /identifier is invalid/);
         await assert.rejects(() => transactions.updateAmountCents(id, 'owner', 1), /identifier is invalid/);
         await assert.rejects(() => transactions.updateDescription(id, 'owner', 'Text'), /identifier is invalid/);
+        await assert.rejects(() => transactions.updateLabel(id, 'owner', 'Text'), /identifier is invalid/);
         await assert.rejects(() => transactions.delete(id, 'owner'), /identifier is invalid/);
     }
     for (const userId of ['', ' owner ']) {
@@ -198,6 +237,7 @@ test('validates IDs and owners at repository boundaries', async () => {
         await assert.rejects(() => transactions.updateCategory(1, userId, 1), /User identifier/);
         await assert.rejects(() => transactions.updateAmountCents(1, userId, 100), /User identifier/);
         await assert.rejects(() => transactions.updateDescription(1, userId, 'Text'), /User identifier/);
+        await assert.rejects(() => transactions.updateLabel(1, userId, 'Text'), /User identifier/);
         await assert.rejects(() => transactions.delete(1, userId), /User identifier/);
     }
 });

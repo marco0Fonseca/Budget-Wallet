@@ -4,7 +4,7 @@ Documento evolutivo dos percursos, telas, ações e respostas visíveis ao usuá
 
 ## Navegação definida
 
-Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. A tela Categorias carrega a lista real da conta pela API protegida e permite criar, editar e excluir categorias personalizadas sem vínculos; Dashboard, Transações, Investimentos e Planejamento diário ainda usam prévias locais.
+Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Categorias, Transações e Investimentos usam dados da conta pela API protegida; Dashboard e Planejamento diário ainda usam prévias locais.
 
 ```mermaid
 flowchart TD
@@ -35,11 +35,13 @@ A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo 
 | Tela/aba | Objetivo | Conteúdo inicial proposto |
 | --- | --- | --- |
 | Login | Entrar no Dashboard | Login, cadastro e recuperação provisória usam rotas da API. O login retorna JWT. A recuperação ainda aceita apenas identificador e senha nova, sem prova de posse da conta; não é segura para uso compartilhado ou real. |
-| Dashboard | Entender rapidamente o mês | Resumo local de receitas, despesas e resultado do período, despesas por categoria, últimos lançamentos e carteira estimada. Os atalhos levam aos painéis correspondentes; os dados aguardam integração com a API. |
-| Transações | Registrar e consultar movimentações | Prévia local com resumo mensal, busca, filtros por tipo, lista por data e painel de detalhes do lançamento selecionado. Criação, edição, exclusão e dados da conta aguardam integração com a API. O período vem do seletor global no topo. |
+| Dashboard | Entender rapidamente o mês | Resumo local de receitas, despesas e resultado do período, despesas por categoria e últimos lançamentos. O cartão de investimentos mostra um estado vazio, sem valores fictícios. Os atalhos levam aos painéis correspondentes; os dados aguardam integração com a API. |
+| Transações | Registrar e consultar movimentações | A lista e os totais do período vêm da API com a identidade da sessão; busca e filtros por tipo, categoria e descrição funcionam na interface. “Nova transação” abre um formulário com nome opcional, tipo, valor, data pré-selecionada em hoje, categoria e descrição opcional. O botão “Editar” abre esse formulário com os dados do lançamento. “Excluir” abre uma confirmação antes de remover definitivamente o lançamento. A lista usa o nome como título ou, se ele estiver vazio, a categoria; a descrição aparece nos detalhes. Após criar, editar ou excluir pela API, a lista e os totais são atualizados; se a data criada ou editada estiver fora do mês filtrado, a tela passa para “Todo o período”. O período vem do seletor global no topo. |
 | Categorias | Organizar classificações | Carrega as categorias da conta pela API e abre um modal para criar categorias principais ou subcategorias. O lápis abre o formulário preenchido para edição. A lixeira abre uma confirmação ou informa que existem subcategorias, transações ou investimentos vinculados; só categorias personalizadas sem vínculos podem ser excluídas nesta etapa. Busca e filtros funcionam localmente. |
-| Investimentos | Consultar e acompanhar investimentos | Prévia local com resumo da carteira, evolução estimada e lista de aportes. Selecionar um item abre seus dados e o progresso do prazo; comparação de projeções fica para incremento posterior. Criação, edição, exclusão e dados da conta aguardam integração com a API. |
+| Investimentos | Consultar e acompanhar investimentos | Lista os investimentos da conta pela API e mostra um estado vazio quando não há registros. “Novo investimento” abre um formulário de aporte inicial, categoria de investimento, data, taxa mensal estimada, prazo e descrição opcional. Após confirmação da API, a lista é atualizada. Edição, exclusão e projeções visuais aguardam incrementos seguintes; comparação de projeções fica para depois. |
 | Planejamento diário | Planejar e acompanhar a evolução do mês | Prévia local com calendário, receita prevista, despesas fixas, meta para guardar, orçamento diário e resumo do dia selecionado. Edição e redistribuição ainda aguardam definição completa das regras e integração. Consulte `BUSINESS-RULES.md`. |
+
+O seletor global apresenta, inicialmente, os meses entre a criação da conta e o mês atual. Na tela de Transações também oferece **Todo o período**; ao sair dessa tela, volta ao último mês escolhido. Em uma etapa posterior, quando a interface permitir criar transações em datas anteriores à criação da conta, o primeiro mês disponível deverá ser o da transação mais antiga. A consulta **Todo o período** já inclui lançamentos antigos que existirem no banco.
 
 Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`. As prévias atuais não devem ser confundidas com dados persistidos ou cálculos integrados.
 
@@ -89,7 +91,7 @@ Comportamentos esperados após a integração:
 - Login, cadastro e recuperação fazem chamadas às rotas de autenticação. Credenciais inválidas e erros da API são apresentados ao usuário.
 - Após login válido, o JWT fica na sessão do navegador. A tela Categorias usa o token na listagem protegida; as demais telas financeiras ainda não têm rotas integradas.
 - Sair limpa a sessão e retorna ao login.
-- O middleware JWT protege a listagem de categorias e impede acesso a outro usuário. As demais rotas financeiras ainda não existem; a proteção abrangente e os testes de isolamento seguem pendentes em BW-09.
+- O middleware JWT protege as rotas de categorias e a listagem de transações, delimitando cada consulta ao usuário autenticado. As demais rotas financeiras e a proteção abrangente seguem pendentes em BW-09.
 - Mês sem lançamentos mostra totais zerados e orientação para cadastrar a primeira movimentação.
 - Erro ao salvar mantém o formulário disponível para correção ou nova tentativa, sem indicar sucesso.
 - A navegação autenticada ainda não implementa operações financeiras; ações desabilitadas e dados de exemplo indicam que a integração está pendente.
@@ -123,9 +125,9 @@ Amanhã    R$ 50,00               —                  —
 
 ## Estado do front e próximos incrementos
 
-- O front tem navegação para cinco áreas, prévias locais dos painéis financeiros e interações visuais de busca, filtros, seleção e calendário.
+- O front tem navegação para cinco áreas, lista real de categorias e transações, prévias locais dos demais painéis financeiros e interações de busca, filtros, seleção e calendário.
 - Cadastro e login chamam a API e o cadastro cria categorias padrão. A recuperação por identificador está implementada apenas como fluxo provisório de desenvolvimento.
-- BW-04 a BW-06 seguem pendentes: criar rotas financeiras, integrar transações e persistir consultas, correções e exclusões.
+- BW-04 está parcial: criação, consulta de transações e totais usam a API; paginação, correção, exclusão e revisão da equipe seguem pendentes. BW-05/BW-06 permanecem parciais ou pendentes nos demais painéis.
 - BW-12 está parcial: criação, edição e exclusão de categorias sem vínculos usam a API; arquivamento e reclassificação antes de excluir categorias em uso ainda estão pendentes.
 - BW-13/BW-14 seguem pendentes de regras finais e implementação persistente; a prévia de Planejamento diário não os conclui.
 - BW-09 segue parcial: falta validação de JWT em rotas protegidas, autorização e testes de isolamento por proprietário; recuperar senha requer prova de posse da conta antes de uso real.

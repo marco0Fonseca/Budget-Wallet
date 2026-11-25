@@ -127,7 +127,8 @@ test('signs in with an email or username and returns a valid JWT without exposin
     const { response, data } = await post('/api/auth/signin', { identifier, password: validSignup.password });
     assert.equal(response.status, 200);
     assert.equal(typeof data.token, 'string');
-    assert.deepStrictEqual(data.user && Object.keys(data.user as object).sort(), ['email', 'id', 'name', 'username']);
+    assert.deepStrictEqual(data.user && Object.keys(data.user as object).sort(), ['createdAtTimestamp', 'email', 'id', 'name', 'username']);
+    assert.equal(Number.isSafeInteger((data.user as { createdAtTimestamp: number }).createdAtTimestamp), true);
     assert.equal('passwordHash' in (data.user as object), false);
     const payload = jwt.verify(data.token as string, testSecret);
     assert.equal(typeof payload === 'object' && payload.userId, (data.user as { id: string }).id);

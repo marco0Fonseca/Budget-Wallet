@@ -15,7 +15,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 - Uma categoria por lançamento.
 - Categorias editáveis, com subcategorias e opções iniciais sugeridas em [Regras de negócio](BUSINESS-RULES.md). O mesmo documento detalha a proposta do calendário, meta de economia e redistribuição do orçamento diário para incremento posterior.
 - O resultado mensal é receitas menos despesas do período; não representa saldo bancário.
-- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. O middleware protege a listagem de categorias; falta aplicá-lo às demais rotas financeiras e completar os testes de isolamento. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
+- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. O middleware protege as rotas de categorias e a listagem de transações; falta aplicá-lo às demais rotas financeiras e completar os testes de isolamento. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
 
 ## Como trabalhar com este backlog
 
@@ -29,7 +29,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders; não se esperava que os painéis já estivessem integrados ao backend. BW-15 segue **Em andamento** para fechar a execução documentada do servidor e a aplicação integrada. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam e o middleware já protege a listagem de categorias; falta ampliar a proteção às demais rotas e concluir a recuperação segura. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue. Próxima fase: ampliar a sessão protegida e iniciar a integração vertical das funcionalidades financeiras.
+BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders. BW-15 segue **Em andamento** para integrar os fluxos financeiros. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam e o middleware protege categorias e a listagem de transações; falta ampliar a proteção às demais rotas e concluir a recuperação segura. BW-04 está parcial com a consulta real das transações. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
@@ -119,7 +119,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 ### BW-04 — Registrar e listar movimentações de ponta a ponta
 
-**Estado:** A iniciar. A tela de Transações é uma prévia local; ainda não há rotas financeiras nem persistência integrada.
+**Estado:** Parcial. `GET /api/transactions` lista lançamentos da conta autenticada por mês ou por todo o período, com totais em centavos. `POST /api/transactions` cria receitas e despesas com categoria do mesmo usuário e tipo; o formulário seleciona hoje por padrão, converte reais em centavos e atualiza a lista após sucesso. `PATCH /api/transactions/:id` edita os campos do lançamento do usuário em uma gravação. `DELETE /api/transactions/:id` exclui após confirmação na interface. Entidade, banco, API e interface separam o nome opcional (`label`) da descrição opcional; sem nome, a lista usa a categoria como título. A tela mostra carregamento, vazio e erro; os totais são atualizados após criar, editar ou excluir. Paginação/limite da lista e revisão da equipe permanecem pendentes. O seletor de meses usa provisoriamente a data de criação da conta como início. A futura ampliação para datas anteriores está registrada em [Fluxo do usuário](USER-FLOW.md).
 
 **História:** como usuário, quero registrar e consultar receitas e despesas para acompanhar minhas movimentações.
 
@@ -127,7 +127,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 **Critérios de aceite:**
 
-- É possível informar tipo, valor positivo, data e categoria; a descrição é opcional.
+- É possível informar tipo, valor positivo, data e categoria; nome do lançamento e descrição são opcionais e separados.
 - A interface converte o valor monetário para centavos sem introduzir arredondamentos indevidos.
 - O servidor rejeita valores inválidos e categorias incompatíveis, mesmo sem as validações do formulário.
 - Ao salvar, o lançamento aparece na lista e permanece após recarregar a página.
@@ -152,7 +152,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 ### BW-06 — Corrigir e excluir lançamentos
 
-**Estado:** A iniciar. Ações de edição e exclusão ainda não persistem alterações.
+**Estado:** Parcial. Edição e exclusão já persistem para lançamentos do usuário autenticado, e a exclusão exige confirmação. Lista e totais são recarregados após sucesso; revisão da equipe ainda pendente.
 
 **História:** como usuário, quero corrigir ou remover um registro incorreto para manter meus dados consistentes.
 
@@ -193,7 +193,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 **Trabalho:** verificar JWT nas rotas privadas e usar a identidade validada para autorizar acesso aos dados do usuário.
 
-**Estado:** Parcial. Login emite JWT e a interface mantém o token na sessão do navegador. O middleware verifica tokens na listagem de categorias e impede acesso a outro `userId`; faltam aplicar a proteção às demais rotas financeiras quando forem criadas e completar a cobertura de isolamento exigida pelos critérios.
+**Estado:** Parcial. Login emite JWT e a interface mantém o token na sessão do navegador. O middleware verifica tokens nas rotas de categorias e na listagem de transações, impedindo acesso aos dados de outro usuário; faltam proteger as demais rotas financeiras quando forem criadas e completar a cobertura de isolamento exigida pelos critérios.
 
 O método definido é e-mail ou username e senha. Esta proteção é pré-requisito para expor dados financeiros por API.
 
@@ -224,7 +224,7 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 
 ### BW-12 — Gerenciar categorias e subcategorias
 
-**Estado:** Parcial. A tela carrega categorias pela API, cria categorias personalizadas e edita nome, tipo e categoria principal pelo mesmo formulário; após salvar, atualiza a lista com a hierarquia retornada pelo servidor. A exclusão de categoria personalizada exige confirmação e é bloqueada quando há subcategorias, transações ou investimentos vinculados. Categorias padrão são protegidas. Busca e filtros são locais. Arquivamento, reclassificação antes de exclusão e validação de nomes entre irmãs permanecem pendentes.
+**Estado:** Parcial. A tela carrega categorias pela API, cria categorias personalizadas e edita nome, tipo e categoria principal pelo mesmo formulário; após salvar, atualiza a lista com a hierarquia retornada pelo servidor. A exclusão de categoria personalizada exige confirmação e é bloqueada quando há subcategorias, transações ou investimentos vinculados. Categorias padrão são protegidas. Busca e filtros são locais. Arquivamento, reclassificação antes de exclusão, validação de nomes entre irmãs e escolha de ícone permanecem pendentes.
 
 **Objetivo:** permitir criar e editar classificações na área de Receitas e Despesas.
 
@@ -234,11 +234,12 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 - Disponibilizar categorias iniciais editáveis por usuário conforme `BUSINESS-RULES.md`.
 - Validar propriedade, tipo, nomes entre irmãs e ausência de ciclos; confirmar o limite inicial proposto de dois níveis antes de implementar.
 - Exibir o caminho da categoria no seletor e agregar pai/filhas sem duplicar valores.
+- Em uma etapa posterior, oferecer um catálogo de ícones para o usuário escolher ao criar ou editar uma categoria; guardar a escolha na categoria e usá-la nos lançamentos associados. Até lá, a lista de transações usa somente ícones de receita e despesa.
 - Testar hierarquia, isolamento, duplicidade, edição e registros vinculados.
 
 ### BW-18 — Integrar investimentos à API
 
-**Estado:** A estimar. O painel usa amostras locais; entidades e repositório existem em BW-03.
+**Estado:** Parcial. `GET /api/investments` lista apenas os registros do usuário autenticado; `POST /api/investments` cria um investimento com categoria própria do tipo `INVESTMENT` e validação dos campos. O painel consulta a API, mostra estados de carregamento, vazio e erro e permite cadastro por formulário. O resumo do Dashboard continua sem integração. Edição e exclusão pela API permanecem pendentes.
 
 **Origem:** o painel visual e a entidade/repositório foram desenvolvidos antes da integração financeira ponta a ponta.
 
@@ -289,7 +290,7 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 
 **Objetivo:** disponibilizar uma aplicação executável para receber as telas e os casos de uso.
 
-**Estado:** Em andamento. A etapa de protótipo visual foi concluída intencionalmente: esqueleto React/Vite e Express, navegação com cinco painéis e suas experiências visuais permitem aos stakeholders avaliar a direção futura antes da integração. Dashboard, Transações, Categorias, Investimentos e Planejamento usam dados locais; filtros e interações ainda não persistem dados. A revisão visual independente aprovou a direção geral. Falta fechar a execução documentada do servidor e integrar progressivamente os fluxos financeiros com autenticação protegida.
+**Estado:** Em andamento. A etapa de protótipo visual foi concluída intencionalmente: esqueleto React/Vite e Express, navegação com cinco painéis e suas experiências visuais permitem aos stakeholders avaliar a direção futura antes da integração. Categorias e Transações já usam a API; Investimentos usa a API para cadastro e consulta. Dashboard e Planejamento ainda têm exemplos locais. A revisão visual independente aprovou a direção geral. Falta integrar progressivamente os demais fluxos financeiros com autenticação protegida.
 
 **Critérios de aceite:**
 
