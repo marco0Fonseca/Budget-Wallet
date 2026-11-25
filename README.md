@@ -31,7 +31,7 @@ Stack utilizada até agora:
 | API | Node.js, Express, TypeScript e CORS |
 | Autenticação | bcrypt para hash de senha e JSON Web Token (`jsonwebtoken`) |
 | Persistência | Prisma Client e migrations, adapter `@prisma/adapter-better-sqlite3` e SQLite |
-| Verificação | `node:test`, `node:assert/strict`, TypeScript e Playwright CLI para inspeção no navegador |
+| Verificação | `node:test`, `node:assert/strict` e TypeScript |
 
 A Vercel foi considerada como opção de hospedagem, mas não integra uma publicação validada. A escolha de hospedagem e banco para produção permanece em BW-08.
 
@@ -43,9 +43,7 @@ O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js
 
 ## Ambiente de desenvolvimento e testes
 
-Use Node.js 22.19 ou uma versão posterior da linha 22 (referência em `.nvmrc`) e npm. As ferramentas são dependências locais do projeto; instalações globais de TypeScript ou `ts-node` não são necessárias.
-
-Na raiz, instale as versões do lockfile:
+Use Node.js 22.19+ da linha 22 e npm. Na raiz do projeto, instale as dependências:
 
 ```sh
 npm ci
@@ -53,61 +51,51 @@ npm ci
 
 | Comando | Finalidade |
 | --- | --- |
-| `npm test` | Executar os testes com o executor nativo `node:test`. |
-| `npm run test:watch` | Reexecutar os testes ao alterar os arquivos; encerrar com Ctrl+C. |
-| `npm run typecheck` | Verificar tipos TypeScript sem gerar arquivos JavaScript. |
-| `npm run check` | Verificar tipos e, se passarem, executar os testes. |
-| `npm run dev:frontend` | Abrir o frontend local em modo de desenvolvimento. |
-| `npm run build:frontend` | Gerar o build do frontend em `dist/frontend/`. |
-| `npm run db:deploy` | Aplicar as migrations versionadas no banco configurado. |
+| `npm test` | Testes automatizados. |
+| `npm run test:watch` | Testes em modo de observação. |
+| `npm run typecheck` | Tipos do backend e dos testes. |
+| `npm run typecheck:frontend` | Tipos do frontend. |
+| `npm run check` | Todos os tipos e testes. |
+| `npm run dev:frontend` | Servidor de desenvolvimento React/Vite. |
+| `npm run build:frontend` | Build do frontend. |
 
 No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` nos comandos acima.
 
-Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de entregar alterações, execute `npm run check` para validar tipos e testes. Use imports relativos com `.ts`, `import type` e sintaxe compatível com `erasableSyntaxOnly`.
+Os testes ficam em `tests/*.test.ts` e usam `node:test`; testes de persistência usam SQLite temporário. `npm run check` verifica tipos e testes antes da entrega. O backend e os testes usam o `tsconfig.json` da raiz; o frontend usa `frontend/tsconfig.json`.
 
-Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
-
-Para executar a aplicação localmente, copie `.env.example` para `.env`, substitua `JWT_SECRET` por um segredo privado (consulte [Autenticação e JWT](docs/AUTHENTICATION.md)) e execute os comandos em terminais separados:
+Para abrir a aplicação, copie `.env.example` para `.env`, defina um `JWT_SECRET` privado e aplique as migrations conforme a seção abaixo. Depois, execute em terminais separados:
 
 ```sh
-npm run db:deploy
 node --env-file=.env src/server/server.ts
 npm run dev:frontend
 ```
 
-O servidor Express usa a porta 5000; o Vite informa a URL local do frontend no terminal. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A Dashboard consulta `GET /api/dashboard?month=YYYY-MM` para totais, gráfico mensal, despesas por categoria e últimos lançamentos, e `GET /api/investments` para o resumo dos investimentos. A tela de Categorias usa `GET/POST /api/categories`, `PATCH /api/categories/:id`, `GET /api/categories/:id/deletion-status` e `DELETE /api/categories/:id`. A tela de Transações usa `GET/POST /api/transactions`, `PATCH /api/transactions/:id` e `DELETE /api/transactions/:id`; a consulta aceita `month=YYYY-MM` ou todo o período sem `month`. A tela de Investimentos usa `GET/POST /api/investments`, `PATCH /api/investments/:id` e `DELETE /api/investments/:id`, além da consulta de categorias. As rotas financeiras exigem `Authorization: Bearer <token>`. O Planejamento diário ainda usa uma prévia local; o chat de IA é apenas visual. Os painéis financeiros do login são ilustrações.
+O Express usa a porta 5000. O Vite mostra a URL do frontend no terminal. Após o login, o JWT fica na sessão do navegador e acompanha as requisições financeiras como `Authorization: Bearer <token>`.
 
-## Automação de navegador
+| Tela | Dados obtidos da API |
+| --- | --- |
+| Dashboard | `GET /api/dashboard?month=YYYY-MM` e `GET /api/investments`. |
+| Categorias | Consulta, criação, edição e exclusão em `/api/categories`. |
+| Transações | Consulta por mês ou todo o período, criação, edição e exclusão em `/api/transactions`. |
+| Investimentos | Consulta, criação, edição e exclusão em `/api/investments`; categorias em `/api/categories`. |
 
-O Playwright CLI está instalado como dependência local. Inicialize o workspace uma vez com `npx playwright cli install`; `.playwright-cli/` fica ignorado pelo Git. Para abrir uma página local e inspecioná-la:
-
-```sh
-npx playwright cli open http://localhost:5173
-npx playwright cli snapshot
-npx playwright cli close
-```
-
-Use a URL mostrada pelo Vite caso a porta seja diferente. Consulte os comandos disponíveis com `npx playwright cli --help`.
+Cadastro, login e recuperação provisória usam `/api/auth`. O Planejamento diário e o chat de IA ainda são prévias visuais. Consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para o contrato do token e a limitação da recuperação de senha.
 
 ## Banco local e migrations
 
-O schema Prisma usa SQLite e acompanha as quatro entidades iniciais. Para criar ou atualizar o banco local com as migrations versionadas, execute na raiz:
+O Prisma usa SQLite. O banco local padrão é `dev.db`, ignorado pelo Git; ajuste `DATABASE_URL` em `.env` se precisar de outro arquivo. Para aplicar as migrations:
 
 ```sh
-npm run db:validate
 npm run db:deploy
-npm run db:status
 ```
 
-O banco padrão é `dev.db` na raiz, ignorado pelo Git. Para mudar a conexão, copie `.env.example` para `.env` e ajuste `DATABASE_URL`. Para futuras alterações no schema, use `npm run db:migrate -- --name nome_da_alteracao` em um banco de desenvolvimento.
-
-Prisma Client é gerado em `src/generated/prisma/`, pasta local ignorada pelo Git. Após instalar as dependências e alterar o schema, gere o cliente com:
+Após mudar o schema, crie uma migration com `npm run db:migrate -- --name nome_da_alteracao` e gere o Prisma Client:
 
 ```sh
 npx prisma generate --config prisma.config.ts
 ```
 
-O adapter SQLite, a conexão e os repositórios de usuário, categorias, movimentações e investimentos já estão configurados. Os testes de integração usam bancos SQLite temporários. O catálogo de categorias padrão está em `src/entities/transactions/defaultCategories.ts` e é copiado para o usuário no fluxo de cadastro. Decisões de IDs, timestamps e relações estão em [Persistência inicial](docs/decisions/0001-initial-persistence.md) e [exclusão de usuário](docs/decisions/0002-user-deletion.md).
+Migrations ficam em `prisma/migrations/`; o client gerado em `src/generated/prisma/` não é versionado. Para conferir o schema ou o estado das migrations, use `npm run db:validate` ou `npm run db:status`. Os testes de integração usam bancos temporários, separados de `dev.db`.
 
 ## Planejamento
 
