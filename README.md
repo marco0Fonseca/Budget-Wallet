@@ -8,32 +8,34 @@ O projeto também contará com um **agente de IA** para auxiliar no registro de 
 
 ## Funcionalidades
 
-Entre as principais funcionalidades previstas estão:
+| Funcionalidade | Estado atual |
+| --- | --- |
+| Cadastro, login e logout | Implementados localmente. A recuperação de senha ainda é provisória: não comprova a posse da conta. |
+| Categorias e subcategorias | Consulta, criação, edição e exclusão condicionada aos vínculos implementadas pela API. |
+| Receitas e despesas | Cadastro, consulta por período, edição, exclusão, filtros e totais implementados pela API. |
+| Dashboard | Totais do mês, gráfico de seis meses, despesas por categoria principal, últimas transações e resumo de investimentos alimentados pela API. |
+| Investimentos | Cadastro, consulta, edição, exclusão e projeções estimadas implementados pela API. |
+| Planejamento diário | Prévia visual; regras e persistência ainda não implementadas. |
+| Assistente de IA | Botão e painel visuais; sem integração com IA. |
+| Recorrências, assinaturas e previsão financeira avançada | Planejadas para incrementos posteriores. |
 
-- Registro de receitas e despesas;
-- Categorização de gastos;
-- Cadastro de despesas recorrentes;
-- Controle de assinaturas;
-- Cadastro e acompanhamento de investimentos;
-- Planejamento financeiro mensal;
-- Previsão de gastos futuros;
-- Dashboards para visualização de dados financeiros;
-- Histórico de movimentações;
-- Agente de IA para auxiliar no registro e consulta de informações financeiras.
+**Produção:** nenhuma funcionalidade está confirmada como publicada. A estratégia de hospedagem e a persistência após reinício ou redeploy ainda precisam ser validadas em BW-08. A recuperação provisória de senha deve ser substituída antes de uso compartilhado ou real.
 
 ## Stack
 
-O projeto será desenvolvido utilizando:
+Stack utilizada até agora:
 
-- **TypeScript**
-- **React**
-- **Express** (backend HTTP)
-- **Prisma**
-- **SQLite**
-- **Node.js / npm**
-- **Vercel**
+| Parte | Tecnologia em uso |
+| --- | --- |
+| Frontend | React, React DOM, TypeScript e Vite |
+| API | Node.js, Express, TypeScript e CORS |
+| Autenticação | bcrypt para hash de senha e JSON Web Token (`jsonwebtoken`) |
+| Persistência | Prisma Client e migrations, adapter `@prisma/adapter-better-sqlite3` e SQLite |
+| Verificação | `node:test`, `node:assert/strict`, TypeScript e Playwright CLI para inspeção no navegador |
 
-O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. Login, cadastro e recuperação provisória de senha já se comunicam com a API. Após o login, a área autenticada oferece navegação lateral para Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Categorias usam a API para consulta e gestão; Transações usa a API para criar e listar lançamentos e calcular os totais do período; Investimentos usa a API para cadastro e consulta. Dashboard e Planejamento diário ainda usam exemplos locais. O chat de IA é apenas visual. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
+A Vercel foi considerada como opção de hospedagem, mas não integra uma publicação validada. A escolha de hospedagem e banco para produção permanece em BW-08.
+
+O frontend usa React com Vite e o backend HTTP usa Express, executado em Node.js. Login, cadastro e recuperação provisória de senha já se comunicam com a API. Após o login, a área autenticada oferece navegação lateral para Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Dashboard, Categorias, Transações e Investimentos usam dados da conta pela API. O Planejamento diário ainda usa uma prévia local. O chat de IA é apenas visual. A escolha do Express está registrada em [ADR 0003](docs/decisions/0003-express-backend.md).
 
 ## Status
 
@@ -57,6 +59,7 @@ npm ci
 | `npm run check` | Verificar tipos e, se passarem, executar os testes. |
 | `npm run dev:frontend` | Abrir o frontend local em modo de desenvolvimento. |
 | `npm run build:frontend` | Gerar o build do frontend em `dist/frontend/`. |
+| `npm run db:deploy` | Aplicar as migrations versionadas no banco configurado. |
 
 No PowerShell, caso a política de execução bloqueie `npm.ps1`, use `npm.cmd` nos comandos acima.
 
@@ -64,19 +67,27 @@ Crie testes `tests/*.test.ts` com `node:test` e `node:assert/strict`. Antes de e
 
 Os testes cobrem ferramentas locais, entidades, schema e persistência dos repositórios em SQLite temporário. O `tsconfig.json` da raiz cobre backend, testes e scripts Prisma; `frontend/tsconfig.json` cobre a interface. O servidor Express está em desenvolvimento; consulte [Autenticação e JWT](docs/AUTHENTICATION.md) para a configuração e o contrato do token.
 
-Para ver a interface, execute `npm run dev:frontend` e inicie também o servidor Express. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A tela de Categorias consulta `GET /api/categories`, cria por `POST /api/categories`, edita por `PATCH /api/categories/:id` e verifica/exclui categorias sem vínculos por `GET /api/categories/:id/deletion-status` e `DELETE /api/categories/:id`. A tela de Transações lista por `GET /api/transactions?month=YYYY-MM` (ou todo o período sem `month`), cria por `POST /api/transactions`, edita por `PATCH /api/transactions/:id` e exclui após confirmação por `DELETE /api/transactions/:id`. A tela de Investimentos consulta `GET /api/investments`, carrega categorias por `GET /api/categories` e cadastra por `POST /api/investments` com `{ categoryId, amountCents, dateTimestamp, monthlyRate, monthsDuration, description? }`; todas exigem `Authorization: Bearer <token>`. Dashboard e Planejamento diário ainda usam exemplos locais. O chat de IA é apenas visual. A recuperação atual permite redefinir a senha por identificador e ainda não comprova posse da conta. Os painéis financeiros do login são ilustrações.
+Para executar a aplicação localmente, copie `.env.example` para `.env`, substitua `JWT_SECRET` por um segredo privado (consulte [Autenticação e JWT](docs/AUTHENTICATION.md)) e execute os comandos em terminais separados:
+
+```sh
+npm run db:deploy
+node --env-file=.env src/server/server.ts
+npm run dev:frontend
+```
+
+O servidor Express usa a porta 5000; o Vite informa a URL local do frontend no terminal. Login, cadastro e recuperação provisória usam as rotas de autenticação; no login bem-sucedido, a interface mantém o JWT na sessão do navegador. A Dashboard consulta `GET /api/dashboard?month=YYYY-MM` para totais, gráfico mensal, despesas por categoria e últimos lançamentos, e `GET /api/investments` para o resumo dos investimentos. A tela de Categorias usa `GET/POST /api/categories`, `PATCH /api/categories/:id`, `GET /api/categories/:id/deletion-status` e `DELETE /api/categories/:id`. A tela de Transações usa `GET/POST /api/transactions`, `PATCH /api/transactions/:id` e `DELETE /api/transactions/:id`; a consulta aceita `month=YYYY-MM` ou todo o período sem `month`. A tela de Investimentos usa `GET/POST /api/investments`, `PATCH /api/investments/:id` e `DELETE /api/investments/:id`, além da consulta de categorias. As rotas financeiras exigem `Authorization: Bearer <token>`. O Planejamento diário ainda usa uma prévia local; o chat de IA é apenas visual. Os painéis financeiros do login são ilustrações.
 
 ## Automação de navegador
 
 O Playwright CLI está instalado como dependência local. Inicialize o workspace uma vez com `npx playwright cli install`; `.playwright-cli/` fica ignorado pelo Git. Para abrir uma página local e inspecioná-la:
 
 ```sh
-npx playwright cli open http://localhost:3000
+npx playwright cli open http://localhost:5173
 npx playwright cli snapshot
 npx playwright cli close
 ```
 
-Consulte os comandos disponíveis com `npx playwright cli --help`.
+Use a URL mostrada pelo Vite caso a porta seja diferente. Consulte os comandos disponíveis com `npx playwright cli --help`.
 
 ## Banco local e migrations
 
@@ -104,10 +115,8 @@ O [backlog inicial](docs/BACKLOG.md) organiza os primeiros incrementos, os crit�
 
 O [fluxo do usuário](docs/USER-FLOW.md) descreve a navegação e as interações. As [regras de negócio](docs/BUSINESS-RULES.md) centralizam validações, cálculos e regras do domínio. Ambos serão atualizados durante o desenvolvimento.
 
-## Equipe
+## Desenvolvedor
 
-Bernardo Friske de Souza
-Gustavo Guardia dos Santos Prado
 Marco Antônio Pereira Alves Fonseca
 
 ## Licença

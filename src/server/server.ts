@@ -5,6 +5,7 @@ import { registerAuthenticationRoutes } from './services/autheticationService.ts
 import { registerCategoriesRoutes } from './services/categoriesService.ts';
 import { registerTransactionsRoutes } from './services/transactionsService.ts';
 import { registerInvestmentsRoutes } from './services/investmentsService.ts';
+import { registerDashboardRoutes } from './services/dashboardService.ts';
 
 const app = express();
 const PORT = 5000;
@@ -29,6 +30,9 @@ const data = {
       }
     },
     endpoints: {
+      dashboard: {
+        'GET /api/dashboard?month=YYYY-MM': 'Get the authenticated user monthly summary, six-month trend, expense categories and recent transactions',
+      },
       auth: {
         'POST /api/auth/signup': 'Create a new user account (Body: { name: string, email: string, username: string, password: string, confirmPassword: string })',
         'POST /api/auth/signin': 'Authenticate with { identifier, password }; returns a JWT on success',
@@ -50,6 +54,8 @@ const data = {
       investments: {
         'GET /api/investments': 'List investments owned by the authenticated user',
         'POST /api/investments': 'Create an investment for the authenticated user (Body: { categoryId, amountCents, dateTimestamp, monthlyRate, monthsDuration, description? })',
+        'PATCH /api/investments/:id': 'Update investment fields owned by the authenticated user',
+        'DELETE /api/investments/:id': 'Delete an investment owned by the authenticated user',
       }
     }
   };
@@ -74,6 +80,7 @@ registerAuthenticationRoutes(app);
 registerCategoriesRoutes(app);
 registerTransactionsRoutes(app);
 registerInvestmentsRoutes(app);
+registerDashboardRoutes(app);
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error('Unexpected API error:', error);

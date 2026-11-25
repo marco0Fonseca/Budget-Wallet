@@ -74,6 +74,34 @@ export class InvestmentRepository {
         return investments.map(investment => this.toEntity(investment));
     }
 
+    async update(investment: Investment): Promise<Investment> {
+        const id = Investment.validateId(investment.id);
+        const userId = Investment.validateUserId(investment.userId);
+        const categoryId = TransactionCategory.validateId(investment.category.id);
+        const category = await prisma.transactionCategory.findUniqueOrThrow({
+            where: { id_userId: { id: categoryId, userId }, type: 'INVESTMENT' },
+        });
+        const validated = new Investment(
+            id,
+            new TransactionCategory(category.id, category.label, category.type, category.parentId, category.userId, category.isDefault),
+            investment.dateTimestamp, investment.amountCents, investment.monthlyRate,
+            investment.monthsDuration, userId, investment.description,
+        );
+        const updated = await prisma.investment.update({
+            where: { id, userId },
+            data: {
+                categoryId,
+                dateTimestamp: BigInt(validated.dateTimestamp),
+                amountCents: validated.amountCents,
+                monthlyRate: validated.monthlyRate,
+                monthsDuration: validated.monthsDuration,
+                description: validated.description ?? null,
+            },
+            include: { category: true },
+        });
+        return this.toEntity(updated);
+    }
+
     async updateAmountCents(id: number, userId: string, newAmountCents: number): Promise<Investment> {
         Investment.validateId(id);
         Investment.validateUserId(userId);

@@ -6,7 +6,7 @@ Este backlog é evolutivo. BW-03 entregou as primeiras entidades e persistência
 
 **Uma pessoa consegue fazer login, acessar o Dashboard, registrar uma receita ou despesa, classificá-la e consultar suas movimentações e o resultado do mês.**
 
-A navegação e o estado real das telas estão em [Fluxo do usuário](USER-FLOW.md): Login → Dashboard, com Transações, Categorias, Investimentos e Planejamento diário. Os painéis financeiros já têm protótipos locais; seus dados e operações ainda precisam de integração.
+A navegação e o estado real das telas estão em [Fluxo do usuário](USER-FLOW.md): Login → Dashboard, com Transações, Categorias, Investimentos e Planejamento diário. Dashboard, Categorias, Transações e Investimentos já consultam dados da API; Planejamento diário ainda é uma prévia visual.
 
 Definições e recorte inicial (propostas restantes indicadas em cada documento):
 
@@ -15,7 +15,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 - Uma categoria por lançamento.
 - Categorias editáveis, com subcategorias e opções iniciais sugeridas em [Regras de negócio](BUSINESS-RULES.md). O mesmo documento detalha a proposta do calendário, meta de economia e redistribuição do orçamento diário para incremento posterior.
 - O resultado mensal é receitas menos despesas do período; não representa saldo bancário.
-- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. O middleware protege as rotas de categorias e a listagem de transações; falta aplicá-lo às demais rotas financeiras e completar os testes de isolamento. A recuperação de senha atual é provisória e não prova posse da conta; ver [Autenticação e JWT](AUTHENTICATION.md).
+- A aplicação já tem cadastro e login com validação de senha e emissão de JWT. O middleware protege as rotas de Dashboard, categorias, transações e investimentos; a recuperação de senha atual é provisória e não prova posse da conta. A interface ainda não verifica a validade do token salvo ao recarregar; ver [Autenticação e JWT](AUTHENTICATION.md).
 
 ## Como trabalhar com este backlog
 
@@ -29,7 +29,7 @@ Definições e recorte inicial (propostas restantes indicadas em cada documento)
 
 ## Fila inicial priorizada
 
-BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders. BW-15 segue **Em andamento** para integrar os fluxos financeiros. BW-09 e BW-11 também foram iniciados: login/cadastro funcionam e o middleware protege categorias e a listagem de transações; falta ampliar a proteção às demais rotas e concluir a recuperação segura. BW-04 está parcial com a consulta real das transações. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue.
+BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas foi intencionalmente concluído em BW-15 para avaliação dos stakeholders. BW-15 segue **Em andamento**: Dashboard, Categorias, Transações e Investimentos já usam a API, mas Planejamento diário ainda é uma prévia. BW-09 e BW-11 seguem parciais por causa da recuperação de senha insegura e da validação da sessão armazenada. BW-04 e BW-05 têm o fluxo principal implementado, com revisão e alguns critérios adicionais pendentes. BW-10, planejado como acesso demonstrativo, foi substituído pelo fluxo de autenticação real e não deve ser contado como entregue.
 
 | ID | Item | Tamanho | Depende de | Incremento |
 | --- | --- | --- | --- | --- |
@@ -93,7 +93,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 ### BW-03 — Criar classes iniciais, mapeamento ORM e testes
 
-**Estado:** Concluído para a versão inicial. Revisão independente por subagente concluída em 22/11/2026; o usuário dispensou a conferência em clone limpo e a revisão por outro integrante ativo devido ao prazo. `npm run check` passou nessa revisão. Entidades `User`, `TransactionCategory`, `Transaction`, `Investment`, schema Prisma, Prisma Client local, quatro migrations e repositórios estão implementados. O catálogo aprovado contém 21 categorias raiz, incluindo opções de investimento; `createDefaultCategoriesForUser` cria a cópia individual de forma repetível e já é chamada no cadastro real. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md) e [0002-user-deletion.md](decisions/0002-user-deletion.md).
+**Estado:** Concluído para a versão inicial. Revisão independente por subagente concluída em 22/11/2026; o usuário dispensou a conferência em clone limpo e a revisão por outro integrante ativo devido ao prazo. `npm run check` passou nessa revisão. Entidades `User`, `TransactionCategory`, `Transaction`, `Investment`, schema Prisma, Prisma Client local, migrations e repositórios estão implementados. Há cinco migrations versionadas atualmente; a quinta, de `label` em transações, foi adicionada depois de BW-03. O catálogo aprovado contém 21 categorias raiz, incluindo opções de investimento; `createDefaultCategoriesForUser` cria a cópia individual de forma repetível e já é chamada no cadastro real. Decisões em [0001-initial-persistence.md](decisions/0001-initial-persistence.md) e [0002-user-deletion.md](decisions/0002-user-deletion.md).
 
 **Objetivo:** construir um primeiro modelo executável do domínio, coerente com o ORM e verificável sem frontend ou servidor HTTP.
 
@@ -137,7 +137,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 ### BW-05 — Consultar o resultado de um mês
 
-**Estado:** A iniciar. Os resumos e gráficos do Dashboard ainda usam exemplos locais.
+**Estado:** Em andamento. A Dashboard consulta totais e gráficos reais por mês pela API, incluindo distribuição das despesas por categoria principal e lançamentos recentes. A consulta separada de investimentos alimenta seu cartão. Testes de integração cobrem mês vazio, virada do mês no fuso de São Paulo, resultado negativo e isolamento entre usuários; revisão da equipe ainda pendente.
 
 **História:** como usuário, quero consultar receitas, despesas e resultado do mês para entender meu período financeiro.
 
@@ -182,7 +182,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 **Critérios de aceite:**
 
-- Uma decisão registra onde rodam frontend, backend e banco, considerando a Vercel prevista no README.
+- Uma decisão registra onde rodam frontend, backend e banco, avaliando a Vercel como opção ainda não validada.
 - Uma prova com dados fictícios verifica persistência após reinício/redeploy e o comportamento esperado de acesso concorrente.
 - Há estratégia para migrations, armazenamento de segredos, backup e restauração.
 - Se a solução exigir trocar o banco ou hospedagem, a decisão e o trabalho necessário entram no backlog antes da publicação.
@@ -193,7 +193,7 @@ BW-01, BW-02 e BW-03 estão **Concluídos**. O protótipo visual de cinco áreas
 
 **Trabalho:** verificar JWT nas rotas privadas e usar a identidade validada para autorizar acesso aos dados do usuário.
 
-**Estado:** Parcial. Login emite JWT e a interface mantém o token na sessão do navegador. O middleware verifica tokens nas rotas de categorias e na listagem de transações, impedindo acesso aos dados de outro usuário; faltam proteger as demais rotas financeiras quando forem criadas e completar a cobertura de isolamento exigida pelos critérios.
+**Estado:** Parcial. Login emite JWT e a interface mantém o token na sessão do navegador. O middleware verifica tokens nas rotas de Dashboard, categorias, transações e investimentos; as consultas e mutações usam o proprietário autenticado, com testes de isolamento entre contas. Ao recarregar a página, a interface ainda confia na presença de um token salvo sem verificar sua validade antes de abrir a área privada. A recuperação de senha também segue provisória.
 
 O método definido é e-mail ou username e senha. Esta proteção é pré-requisito para expor dados financeiros por API.
 
@@ -208,7 +208,7 @@ O método definido é e-mail ou username e senha. Esta proteção é pré-requis
 
 ### BW-10 — Criar a entrada demonstrativa e navegação (substituído)
 
-**Estado:** Não implementado como planejado. Foi ultrapassado pelo desenvolvimento antecipado de cadastro e login reais em BW-09/BW-11. A navegação e os cinco painéis visuais foram feitos em BW-15, com dados locais. Não transportar os critérios de login demonstrativo para a versão atual nem contar este item como concluído.
+**Estado:** Não implementado como planejado. Foi ultrapassado pelo desenvolvimento antecipado de cadastro e login reais em BW-09/BW-11. A navegação e os cinco painéis visuais nasceram em BW-15; quatro painéis já usam dados da API e Planejamento diário permanece visual. Não transportar os critérios de login demonstrativo para a versão atual nem contar este item como concluído.
 
 ### BW-11 — Cadastrar conta e recuperar senha na página de login
 
@@ -239,7 +239,7 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 
 ### BW-18 — Integrar investimentos à API
 
-**Estado:** Parcial. `GET /api/investments` lista apenas os registros do usuário autenticado; `POST /api/investments` cria um investimento com categoria própria do tipo `INVESTMENT` e validação dos campos. O painel consulta a API, mostra estados de carregamento, vazio e erro e permite cadastro por formulário. O resumo do Dashboard continua sem integração. Edição e exclusão pela API permanecem pendentes.
+**Estado:** Parcial. `GET /api/investments` lista os registros do usuário autenticado e retorna totais e evolução estimada; `POST`, `PATCH` e `DELETE /api/investments` permitem criar, editar e excluir registros próprios. O painel usa a API, mostra estados de carregamento, vazio e erro, exibe cartões e gráfico calculados e pede confirmação para excluir. O cartão da Dashboard também consulta os dados reais; a comparação de investimentos permanece para depois.
 
 **Origem:** o painel visual e a entidade/repositório foram desenvolvidos antes da integração financeira ponta a ponta.
 
@@ -290,7 +290,7 @@ Cadastro, login, formulários da página de entrada e criação das categorias p
 
 **Objetivo:** disponibilizar uma aplicação executável para receber as telas e os casos de uso.
 
-**Estado:** Em andamento. A etapa de protótipo visual foi concluída intencionalmente: esqueleto React/Vite e Express, navegação com cinco painéis e suas experiências visuais permitem aos stakeholders avaliar a direção futura antes da integração. Categorias e Transações já usam a API; Investimentos usa a API para cadastro e consulta. Dashboard e Planejamento ainda têm exemplos locais. A revisão visual independente aprovou a direção geral. Falta integrar progressivamente os demais fluxos financeiros com autenticação protegida.
+**Estado:** Em andamento. A etapa de protótipo visual foi concluída intencionalmente: esqueleto React/Vite e Express, navegação com cinco painéis e suas experiências visuais permitem aos stakeholders avaliar a direção futura antes da integração. Dashboard, Categorias, Transações e Investimentos usam a API protegida; Planejamento diário ainda tem uma prévia local. A revisão visual independente aprovou a direção geral. Falta integrar o Planejamento e revisar os fluxos financeiros completos.
 
 **Critérios de aceite:**
 

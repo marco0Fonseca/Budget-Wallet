@@ -83,7 +83,23 @@ async function getInvestments(userId?: string) {
   const response = await fetch(`${baseUrl}/api/investments`, {
     headers: userId ? { authorization: `Bearer ${jwt.sign({ userId }, testSecret)}` } : {},
   });
-  return { response, data: await response.json() as { investments?: { id: number; category: { id: number; type: string }; amountCents: number; dateTimestamp: number; monthlyRate: number; monthsDuration: number; description: string | null }[]; error?: string } };
+  return { response, data: await response.json() as { investments?: { id: number; category: { id: number; type: string }; amountCents: number; dateTimestamp: number; monthlyRate: number; monthsDuration: number; description: string | null }[]; summary?: { contributionCents: number | null; projectedTotalCents: number | null; projectedGainCents: number | null }; trend?: { asOf: number; contributionCents: number | null; estimatedCents: number | null }[]; error?: string } };
+}
+
+async function patchInvestment(userId: string | undefined, id: number | string, body: Record<string, unknown>) {
+  const response = await fetch(`${baseUrl}/api/investments/${id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', ...(userId ? { authorization: `Bearer ${jwt.sign({ userId }, testSecret)}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  return { response, data: await response.json() as { investment?: { id: number; category: { id: number }; amountCents: number; dateTimestamp: number; monthlyRate: number; monthsDuration: number; description: string | null }; error?: string } };
+}
+
+async function deleteInvestment(userId: string | undefined, id: number | string) {
+  return fetch(`${baseUrl}/api/investments/${id}`, {
+    method: 'DELETE',
+    headers: userId ? { authorization: `Bearer ${jwt.sign({ userId }, testSecret)}` } : {},
+  });
 }
 
 test('creates an investment with exact cents for the authenticated owner', async () => {
@@ -129,6 +145,26 @@ test('lists only the authenticated user investments and returns an empty list fo
   assert.equal((await getInvestments()).response.status, 401);
 });
 
+test('calculates portfolio cards and trend from owned investments', async () => {
+  const user = await prisma.user.create({ data: { name: 'Overview', email: 'investment.overview@example.com', username: 'investment.overview', passwordHash: 'test-hash', createdAtTimestamp: 1790000000000n } });
+  const category = await prisma.transactionCategory.create({ data: { label: 'CDI', type: 'INVESTMENT', userId: user.id } });
+  const empty = await getInvestments(user.id);
+  assert.deepEqual(empty.data.summary, { contributionCents: 0, projectedTotalCents: 0, projectedGainCents: 0 });
+  assert.equal(empty.data.trend?.length, 6);
+  await prisma.investment.create({ data: {
+    categoryId: category.id, userId: user.id, amountCents: 10000,
+    dateTimestamp: BigInt(Date.now() - 60_000), monthlyRate: 0.01, monthsDuration: 12,
+  } });
+  const overview = await getInvestments(user.id);
+  assert.equal(overview.response.status, 200);
+  assert.deepEqual(overview.data.summary, { contributionCents: 10000, projectedTotalCents: 11268, projectedGainCents: 1268 });
+  assert.equal(overview.data.trend?.length, 6);
+  assert.equal(overview.data.trend?.[0]?.contributionCents, 10000);
+  assert.equal(overview.data.trend?.[0]?.estimatedCents, 10000);
+  assert.ok(overview.data.trend?.every((point, index, points) => index === 0 || point.asOf > points[index - 1]!.asOf));
+  assert.equal((await getInvestments(otherId)).data.investments?.some(item => item.category.id === category.id), false);
+});
+
 test('rejects unauthenticated requests and foreign or incompatible categories', async () => {
   const base = { categoryId: investmentCategoryId, amountCents: 10000, dateTimestamp: Date.now(), monthlyRate: 0, monthsDuration: 12 };
   const count = await prisma.investment.count();
@@ -154,4 +190,75 @@ test('rejects invalid investment fields without writing records', async () => {
     assert.equal(response.status, 400, JSON.stringify(change));
   }
   assert.equal(await prisma.investment.count(), count);
+});
+
+test('edits all investment fields in one operation and preserves omitted fields', async () => {
+  const alternative = await prisma.transactionCategory.create({ data: { label: 'Treasury', type: 'INVESTMENT', userId: ownerId } });
+  const original = await prisma.investment.create({ data: {
+    categoryId: investmentCategoryId, userId: ownerId, amountCents: 10000,
+    dateTimestamp: 1795000000123n, monthlyRate: 0.01, monthsDuration: 12, description: 'Original',
+  } });
+  const partial = await patchInvestment(ownerId, original.id, { description: '  Updated  ' });
+  assert.equal(partial.response.status, 200, partial.data.error);
+  assert.equal(partial.data.investment?.description, 'Updated');
+  assert.equal(partial.data.investment?.amountCents, 10000);
+  assert.equal(partial.data.investment?.dateTimestamp, Number(original.dateTimestamp));
+
+  const changedDate = Date.parse('2026-12-12T15:00:00.000Z');
+  const changed = await patchInvestment(ownerId, original.id, {
+    categoryId: alternative.id, amountCents: 23456, dateTimestamp: changedDate,
+    monthlyRate: -0.02, monthsDuration: 24, description: null, userId: otherId,
+  });
+  assert.equal(changed.response.status, 200, changed.data.error);
+  assert.deepEqual(changed.data.investment, {
+    id: original.id, category: { id: alternative.id, label: 'Treasury', type: 'INVESTMENT', parentId: null },
+    amountCents: 23456, dateTimestamp: changedDate, monthlyRate: -0.02,
+    monthsDuration: 24, description: null,
+  });
+  const stored = await prisma.investment.findUniqueOrThrow({ where: { id: original.id } });
+  assert.equal(stored.userId, ownerId);
+  assert.equal(stored.categoryId, alternative.id);
+  assert.equal(stored.dateTimestamp, BigInt(changedDate));
+  assert.equal(stored.description, null);
+});
+
+test('rejects invalid or cross-account edits without changing the investment', async () => {
+  const original = await prisma.investment.create({ data: {
+    categoryId: investmentCategoryId, userId: ownerId, amountCents: 10000,
+    dateTimestamp: 1795000000123n, monthlyRate: 0.01, monthsDuration: 12,
+  } });
+  assert.equal((await patchInvestment(undefined, original.id, { amountCents: 20000 })).response.status, 401);
+  assert.equal((await patchInvestment(otherId, original.id, { amountCents: 20000 })).response.status, 404);
+  assert.equal((await patchInvestment(ownerId, 'not-an-id', { amountCents: 20000 })).response.status, 400);
+  assert.equal((await patchInvestment(ownerId, original.id, {})).response.status, 400);
+  for (const change of [
+    { categoryId: otherCategoryId }, { categoryId: incomeCategoryId }, { categoryId: 999999 },
+    { amountCents: 0 }, { dateTimestamp: '2026-12-12' }, { monthlyRate: -1 },
+    { monthsDuration: 1.5 }, { description: 123 },
+  ]) {
+    const { response } = await patchInvestment(ownerId, original.id, change);
+    assert.equal(response.status, 400, JSON.stringify(change));
+  }
+  assert.deepEqual(await prisma.investment.findUniqueOrThrow({ where: { id: original.id } }), original);
+});
+
+test('deletes only an owned investment and leaves its category and other accounts intact', async () => {
+  const owned = await prisma.investment.create({ data: {
+    categoryId: investmentCategoryId, userId: ownerId, amountCents: 7654,
+    dateTimestamp: 1795000000123n, monthlyRate: 0, monthsDuration: 6,
+  } });
+  const foreign = await prisma.investment.create({ data: {
+    categoryId: otherCategoryId, userId: otherId, amountCents: 9999,
+    dateTimestamp: 1795000000123n, monthlyRate: 0, monthsDuration: 6,
+  } });
+  assert.equal((await deleteInvestment(undefined, owned.id)).status, 401);
+  assert.equal((await deleteInvestment(otherId, owned.id)).status, 404);
+  assert.equal((await deleteInvestment(ownerId, '1.0')).status, 400);
+  const removed = await deleteInvestment(ownerId, owned.id);
+  assert.equal(removed.status, 204);
+  assert.equal(await removed.text(), '');
+  assert.equal(await prisma.investment.findUnique({ where: { id: owned.id } }), null);
+  assert.ok(await prisma.transactionCategory.findUnique({ where: { id: investmentCategoryId } }));
+  assert.ok(await prisma.investment.findUnique({ where: { id: foreign.id } }));
+  assert.equal((await deleteInvestment(ownerId, owned.id)).status, 404);
 });

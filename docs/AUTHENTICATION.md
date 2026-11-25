@@ -2,7 +2,7 @@
 
 ## Configuração local
 
-O backend usa `jsonwebtoken` para assinar tokens e `bcrypt` para gerar hashes de senha. Configure estas variáveis no ambiente do servidor:
+O backend usa `jsonwebtoken` para assinar tokens e `bcrypt` para gerar hashes de senha. Copie `.env.example` para `.env`, substitua o segredo de exemplo e carregue o arquivo ao iniciar o Node com `--env-file=.env`. Configure estas variáveis no ambiente do servidor:
 
 | Variável | Uso | Padrão atual |
 | --- | --- | --- |
@@ -31,6 +31,6 @@ Antes do uso real, a redefinição deve exigir um token aleatório, temporário 
 
 ## Estado da implementação
 
-O helper em `src/server/auth.ts` contém geração/verificação de hash, assinatura e verificação de token, além do middleware `authenticateToken`. As rotas `POST /api/auth/signup`, `/api/auth/signin` e `/api/auth/recover` estão conectadas aos formulários React. O cadastro cria o usuário e suas categorias padrão individuais; o login valida e-mail ou username com a senha e devolve o JWT. A recuperação permanece insegura e provisória conforme descrito acima. O middleware protege `GET /api/categories` e `POST /api/categories`, identificando o proprietário pelo token; aplicar autenticação e autorização às demais rotas, ampliar os testes de isolamento e tornar a recuperação segura ainda são necessários antes de considerar a autenticação completa.
+O helper em `src/server/auth.ts` contém geração/verificação de hash, assinatura e verificação de token, além do middleware `authenticateToken`. As rotas `POST /api/auth/signup`, `/api/auth/signin` e `/api/auth/recover` estão conectadas aos formulários React. O cadastro cria o usuário e suas categorias padrão individuais; o login valida e-mail ou username com a senha e devolve o JWT. O middleware protege as rotas de Dashboard, categorias, transações e investimentos e usa a identidade do token para delimitar os dados. Os testes de integração verificam isolamento entre usuários nas operações financeiras. A recuperação permanece insegura e provisória conforme descrito acima.
 
-O cadastro está implementado; BW-11 permanece parcial até que a recuperação exija prova de posse da conta. A validação da sessão e a proteção das rotas estão pendentes em BW-09 no [backlog](BACKLOG.md). Atualize esta página quando middleware JWT e recuperação segura forem implementados.
+BW-09 e BW-11 permanecem parciais no [backlog](BACKLOG.md): ainda faltam a recuperação com prova de posse da conta e a validação da sessão antes de abrir a área privada após recarregar a página. A presença de um token no armazenamento da sessão, por si só, não confirma sua validade.

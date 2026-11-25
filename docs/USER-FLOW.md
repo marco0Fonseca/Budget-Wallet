@@ -4,7 +4,7 @@ Documento evolutivo dos percursos, telas, ações e respostas visíveis ao usuá
 
 ## Navegação definida
 
-Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Categorias, Transações e Investimentos usam dados da conta pela API protegida; Dashboard e Planejamento diário ainda usam prévias locais.
+Após entrar, o usuário acessa cinco destinos pela navegação lateral: Dashboard, Transações, Categorias, Investimentos e Planejamento diário. Dashboard, Categorias, Transações e Investimentos usam dados da conta pela API protegida; Planejamento diário ainda usa uma prévia local.
 
 ```mermaid
 flowchart TD
@@ -28,22 +28,22 @@ As cinco áreas ficam acessíveis pela navegação lateral. O botão Assistente 
 - **Esqueceu a senha?** recebe identificador, senha nova e confirmação. A recuperação atual redefine pelo identificador, sem comprovar posse da conta; essa limitação permanece antes de uso real.
 - Erros de validação, credenciais ou conexão são mostrados no formulário. O usuário pode voltar à tela de login.
 
-## Responsabilidades propostas para as telas
+## Estado das telas
 
-A estrutura de navegação acima foi definida pelo usuário. O conteúdo abaixo é uma proposta inicial para refinamento, sem antecipar todas as funcionalidades.
+A estrutura de navegação acima foi definida pelo usuário. A tabela distingue as interações já implementadas das prévias e pendências.
 
-| Tela/aba | Objetivo | Conteúdo inicial proposto |
+| Tela/aba | Objetivo | Estado atual e pendências |
 | --- | --- | --- |
 | Login | Entrar no Dashboard | Login, cadastro e recuperação provisória usam rotas da API. O login retorna JWT. A recuperação ainda aceita apenas identificador e senha nova, sem prova de posse da conta; não é segura para uso compartilhado ou real. |
-| Dashboard | Entender rapidamente o mês | Resumo local de receitas, despesas e resultado do período, despesas por categoria e últimos lançamentos. O cartão de investimentos mostra um estado vazio, sem valores fictícios. Os atalhos levam aos painéis correspondentes; os dados aguardam integração com a API. |
+| Dashboard | Entender rapidamente o mês | Carrega pela API receitas, despesas e resultado do mês escolhido, evolução dos seis meses até ele, despesas agrupadas por categoria principal e até quatro lançamentos recentes. O cartão de investimentos consulta os aportes e as projeções da conta, mesmo quando o mês selecionado é outro; os investimentos não são lançamentos do resultado mensal. Erros e estados vazios não exibem valores fictícios. Os atalhos levam aos painéis correspondentes. |
 | Transações | Registrar e consultar movimentações | A lista e os totais do período vêm da API com a identidade da sessão; busca e filtros por tipo, categoria e descrição funcionam na interface. “Nova transação” abre um formulário com nome opcional, tipo, valor, data pré-selecionada em hoje, categoria e descrição opcional. O botão “Editar” abre esse formulário com os dados do lançamento. “Excluir” abre uma confirmação antes de remover definitivamente o lançamento. A lista usa o nome como título ou, se ele estiver vazio, a categoria; a descrição aparece nos detalhes. Após criar, editar ou excluir pela API, a lista e os totais são atualizados; se a data criada ou editada estiver fora do mês filtrado, a tela passa para “Todo o período”. O período vem do seletor global no topo. |
 | Categorias | Organizar classificações | Carrega as categorias da conta pela API e abre um modal para criar categorias principais ou subcategorias. O lápis abre o formulário preenchido para edição. A lixeira abre uma confirmação ou informa que existem subcategorias, transações ou investimentos vinculados; só categorias personalizadas sem vínculos podem ser excluídas nesta etapa. Busca e filtros funcionam localmente. |
-| Investimentos | Consultar e acompanhar investimentos | Lista os investimentos da conta pela API e mostra um estado vazio quando não há registros. “Novo investimento” abre um formulário de aporte inicial, categoria de investimento, data, taxa mensal estimada, prazo e descrição opcional. Após confirmação da API, a lista é atualizada. Edição, exclusão e projeções visuais aguardam incrementos seguintes; comparação de projeções fica para depois. |
+| Investimentos | Consultar e acompanhar investimentos | Lista os investimentos da conta pela API e mostra um estado vazio quando não há registros. O painel exibe aportes cadastrados, rendimento estimado ao fim dos prazos e valor projetado, além de um gráfico com a evolução estimada. “Novo investimento” abre o formulário de aporte inicial, categoria, data, taxa mensal estimada, prazo e descrição opcional. O lápis abre o mesmo formulário preenchido para edição; a lixeira abre uma confirmação antes da exclusão. Lista, cartões e gráfico são atualizados após sucesso na API. Comparação de projeções fica para depois. |
 | Planejamento diário | Planejar e acompanhar a evolução do mês | Prévia local com calendário, receita prevista, despesas fixas, meta para guardar, orçamento diário e resumo do dia selecionado. Edição e redistribuição ainda aguardam definição completa das regras e integração. Consulte `BUSINESS-RULES.md`. |
 
 O seletor global apresenta, inicialmente, os meses entre a criação da conta e o mês atual. Na tela de Transações também oferece **Todo o período**; ao sair dessa tela, volta ao último mês escolhido. Em uma etapa posterior, quando a interface permitir criar transações em datas anteriores à criação da conta, o primeiro mês disponível deverá ser o da transação mais antiga. A consulta **Todo o período** já inclui lançamentos antigos que existirem no banco.
 
-Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`. As prévias atuais não devem ser confundidas com dados persistidos ou cálculos integrados.
+Apresentar valores realizados e previstos separadamente, com rótulos coerentes com os conceitos definidos em `BUSINESS-RULES.md`. A prévia de Planejamento diário e os cartões decorativos do login não devem ser confundidos com dados persistidos ou cálculos integrados.
 
 ## Esboço de baixa fidelidade
 

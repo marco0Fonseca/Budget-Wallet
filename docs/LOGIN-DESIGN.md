@@ -12,7 +12,7 @@
 - Tela pensada primeiro para computador, com área de formulário e prévia ilustrativa do Dashboard.
 - Paleta azul, interface financeira sóbria e sem personagens. A prévia mostra componentes plausíveis do BudgetWallet: resumo do mês, receitas, despesas, resultado e gráfico.
 - Superfícies com cantos arredondados moderados, campos legíveis, contraste e espaços regulares.
-- Campos **E-mail ou username** e **Senha**, ação **Entrar** e aviso discreto de acesso demonstrativo, conforme [fluxo do usuário](USER-FLOW.md). Os controles para criar conta e recuperar senha ficam visíveis, mas as operações reais permanecem para incrementos posteriores.
+- Campos **E-mail ou username** e **Senha** e ação **Entrar**, conforme [fluxo do usuário](USER-FLOW.md). O estudo inicial incluía acesso demonstrativo; a implementação atual usa cadastro e login reais, com recuperação de senha ainda provisória.
 - As imagens foram geradas como estudos visuais. Números, gráficos e alguns rótulos são ilustrativos; a prévia não promete funcionalidades já implementadas. A interface final usará apenas ações e conceitos aprovados no fluxo do produto.
 - Layout para telas pequenas será definido após a direção desktop, preservando semântica e acesso por teclado.
 
@@ -45,7 +45,7 @@ As duas imagens preservam o painel independente de login da A2. Elas diferem na 
 
 As duas imagens são estudos visuais, com dados fictícios. A versão 2 orienta a implementação atual. Os painéis de fundo são decorativos e sua presença não antecipa a implementação das funcionalidades representadas.
 
-Na implementação, o login usa um painel branco independente, base azul clara, cantos arredondados e cinco cartões distribuídos. O layout foi compactado para caber em 1366 × 768 a 100% de zoom, e os ícones têm alinhamento uniforme. O formulário recebe foco visível, mensagens de validação e acesso demonstrativo apenas no ambiente local. Os controles de cadastro e recuperação abrem telas informativas até a integração real. O Dashboard de destino permanece vazio nesta etapa, conforme decisão do usuário.
+Na implementação, o login usa um painel branco independente, base azul clara, cantos arredondados e cinco cartões distribuídos. O layout foi compactado para caber em 1366 × 768 a 100% de zoom, e os ícones têm alinhamento uniforme. O formulário recebe foco visível e mensagens de validação. Cadastro e login usam a API; a recuperação de senha também está conectada, mas permanece provisória e não comprova a posse da conta. Após entrar, a Dashboard mostra dados reais da conta; os cartões de fundo da página de login continuam ilustrativos.
 
 [Ver captura da implementação em 1366 × 768](design/login-implemented-desktop.png).
 
@@ -53,6 +53,6 @@ Após comparar as capturas enviadas pelo usuário em 100% e 90% de zoom, a compo
 
 ## Revisão da interface
 
-Na revisão com Playwright, o login coube em 1534 × 695, 1366 × 768 e 1024 × 768 a 100% de zoom, sem rolagem, e permaneceu utilizável em 390 × 844. Em 320 × 700 há rolagem vertical curta, sem rolagem horizontal. Foram conferidos entrada demonstrativa, mensagens para campos vazios, foco no primeiro erro, saída e navegação para os estados de cadastro e recuperação.
+Na revisão do protótipo inicial com Playwright, o login coube em 1534 × 695, 1366 × 768 e 1024 × 768 a 100% de zoom, sem rolagem, e permaneceu utilizável em 390 × 844. Em 320 × 700 houve rolagem vertical curta, sem rolagem horizontal. Aquela revisão conferiu entrada demonstrativa, mensagens para campos vazios, foco no primeiro erro, saída e navegação para os estados de cadastro e recuperação; o fluxo real posterior exige nova verificação específica.
 
 Pelas regras aplicáveis da skill `web-design-guidelines`, a interface usa controles nativos, rótulos de campos, foco visível, link para pular ao formulário, erros próximos aos campos, URLs para os estados informativos e formatação `pt-BR` dos valores ilustrativos. O detalhamento responsivo para celulares continua previsto para uma etapa posterior.

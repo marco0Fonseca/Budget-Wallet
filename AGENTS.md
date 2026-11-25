@@ -18,10 +18,10 @@ O backlog contém propostas e hipóteses, não prova de funcionalidades implemen
 ## Desenvolvimento incremental
 
 - Trabalhe no incremento solicitado, com mudanças pequenas, coesas e demonstráveis.
-- Após a configuração local de BW-02, priorize classes iniciais, mapeamento ORM e testes em BW-03. A integração React/backend e lint/CI ficam para BW-15/BW-16; não são pré-requisitos para começar o domínio.
-- O primeiro fluxo priorizado é Login → Dashboard, com cadastro e consulta de receitas e despesas categorizadas; em seguida, consultar o resultado mensal e corrigir registros. Consulte `docs/USER-FLOW.md` para a navegação e as pendências. Investimentos e Previsões / Acompanhamento mensal dia a dia são abas previstas para incrementos posteriores.
+- BW-02 e BW-03 estabeleceram as ferramentas, entidades, ORM e testes. BW-15 integrou Dashboard, Categorias, Transações e Investimentos à API; Planejamento diário, lint/CI e publicação permanecem em andamento ou pendentes. Consulte `docs/BACKLOG.md` para o estado atualizado.
+- O fluxo principal é Login → Dashboard, com cadastro e consulta de receitas e despesas categorizadas, resultado mensal e correção de registros. Investimentos também possuem fluxo integrado. Consulte `docs/USER-FLOW.md` para navegação e pendências.
 - Evolua modelagem, implementação e testes juntos. Não modele todo o produto antes de entregar o primeiro fluxo.
-- Não antecipe IA, investimentos, recorrências, cartões ou outras funcionalidades futuras sem necessidade da tarefa atual.
+- Não antecipe IA, recorrências, cartões ou outras funcionalidades futuras sem necessidade da tarefa atual.
 - Evite refatorações amplas, abstrações genéricas e novas dependências sem benefício concreto para a entrega.
 - Registre decisões arquiteturais relevantes em ADRs curtos em `docs/decisions/`: contexto, decisão, consequências e condições para revisão. Não crie um ADR para cada detalhe de código.
 - Atualize a documentação quando uma mudança invalidar instruções ou decisões existentes. Não marque um item como concluído se faltarem critérios de aceite ou revisão da equipe.
@@ -29,17 +29,17 @@ O backlog contém propostas e hipóteses, não prova de funcionalidades implemen
 
 ## Stack e organização
 
-A stack definida é TypeScript e React no frontend, com Node.js e Express no backend; Prisma e SQLite cuidam da persistência. React, React DOM, Express e seus tipos TypeScript já são dependências locais. A configuração do frontend e a integração HTTP ainda pertencem a BW-15. A Vercel é a opção de hospedagem prevista, sujeita à validação de persistência descrita em BW-08. A decisão sobre Express está em `docs/decisions/0003-express-backend.md`.
+A stack em uso é TypeScript, React e Vite no frontend; Node.js e Express no backend; Prisma com SQLite na persistência. Autenticação usa bcrypt e JWT. A integração HTTP está em andamento em BW-15. Hospedagem e persistência de produção ainda não foram validadas em BW-08. A decisão sobre Express está em `docs/decisions/0003-express-backend.md`.
 
 Organização inicial, a ajustar conforme as decisões registradas:
 
 | Caminho | Responsabilidade |
 | --- | --- |
-| `frontend/` | Interface React, organizada por funcionalidades quando necessário. |
+| `frontend/src/` | Interface React e estilos, organizados por painéis. |
 | `src/server/` | Aplicação HTTP Express, rotas e integração com os casos de uso. |
-| `src/` | Entidades, casos de uso, validação e regras de negócio. |
-| `src/db/` | Configuração do acesso ao banco pelo Prisma. |
-| `prisma/` | Schema, migrations e seed de desenvolvimento. |
+| `src/entities/` | Entidades, validação e regras de negócio. |
+| `src/repository/` | Repositórios e configuração do Prisma Client. |
+| `prisma/` | Schema e migrations versionadas. |
 | `docs/` | Backlog e decisões técnicas. |
 
 - Mantenha um monólito modular simples, com limites claros entre interface, regras e persistência.
@@ -74,7 +74,7 @@ As seguintes convenções orientam o primeiro incremento. Se o escopo mudar, atu
 
 - Não versione credenciais, arquivos `.env` com valores reais, bancos locais ou dados financeiros pessoais. Documente as variáveis necessárias em um arquivo de exemplo sem segredos.
 - Evite registrar tokens, credenciais ou conteúdo financeiro pessoal em logs.
-- O primeiro incremento usa acesso demonstrativo com e-mail ou username e qualquer senha não vazia (BW-10), sem validar credenciais ou criar contas. Não persista nem registre essa senha. Um usuário fixo só é aceitável na demonstração local com dados fictícios e deve ficar indisponível no ambiente de uso real. Autenticação real, cadastro e recuperação na mesma página ficam para BW-09 e BW-11.
+- BW-10, de acesso demonstrativo, foi substituído por cadastro e login reais. A recuperação por identificador ainda é provisória e não comprova posse da conta; consulte `docs/AUTHENTICATION.md`. Não registre senhas ou tokens. Antes do uso real, valide a sessão armazenada na interface e implemente recuperação segura.
 - Antes de uso real, implemente autenticação e isolamento por proprietário. Obtenha a identidade da sessão validada, sem confiar em `userId` enviado pelo cliente.
 - Aplique autorização em consultas, totais e mutações. Teste acesso indevido com dois usuários e IDs conhecidos.
 - Antes de publicar, comprove a persistência no ambiente escolhido, incluindo reinício/redeploy, migrations e recuperação. Não trate o arquivo SQLite local como garantia de persistência na hospedagem.
@@ -89,7 +89,7 @@ As seguintes convenções orientam o primeiro incremento. Se o escopo mudar, atu
 
 ## Verificação e entrega
 
-O projeto possui dependências locais, lockfile e comandos de testes e verificação de tipos (`npm run check`). Banco e testes de persistência serão configurados em BW-03; aplicação/build em BW-15 e lint/CI em BW-16. Consulte os scripts atuais antes de executar verificações e documente novos comandos no README; não afirme ter executado verificações indisponíveis.
+O projeto possui dependências locais, lockfile, banco e testes de persistência, frontend e build. `npm run check` verifica tipos e testes. Lint/CI segue pendente em BW-16. Consulte os scripts atuais antes de executar verificações e documente novos comandos no README; não afirme ter executado verificações indisponíveis.
 
 Em cada alteração:
 
